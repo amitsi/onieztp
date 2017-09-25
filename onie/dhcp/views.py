@@ -20,7 +20,7 @@ def dhcp_switch_add(request):
             mac_addr = form.cleaned_data['mac_addr']
             default_url = form.cleaned_data['default_url']
 
-            dhcp_file = open("/tmp/dhcpd.conf", "a")
+            dhcp_file = open("/etc/dhcp/dhcpd.conf", "a")
             str_onie = "\nhost " + name
             str_onie += "{\nhardware ethernet " + ip_addr
             str_onie += ";\nfixed-address " + mac_addr
