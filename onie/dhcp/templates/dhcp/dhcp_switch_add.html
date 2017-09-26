@@ -5,15 +5,35 @@
     <title>gaurav</title>
 </head>
 <body>
+<h4>Switch name for the hosts file</h4>
+
+
+<div>
+<form action="{% url 'make_host_file' %}" method="post">{% csrf_token %}
+    <label for="ip_addr">Switch section name </label>
+    <input  type="text"  name="section_name"><br>
+<h5>Check the switch names correcponding to the section provided</h5>
+    {% for post in display %}
+<input type="checkbox" name="switch" value="{{ post.switch_name }}">{{ post.switch_name }}<br>
+    {% endfor %}
+<input type="submit" value="submit">
+</form>
+
+</div>
+
+<hr>
+<hr>
+
 <form action="" method="post">{% csrf_token %}
-    <label for="switch_name">Switch name: </label>
+<!--    <label for="switch_name">Switch name: </label>
     <input  type="text"  name="switch_name"><br>
     <label for="ip_addr">Ip address: </label>
     <input  type="text"  name="ip_addr"><br>
     <label for="mac_addr">Mac address: </label>
     <input  type="text"  name="mac_addr"><br>
     <label for="default_url">Default url: </label>
-    <input  type="text"  name="default_url"><br>
+    <input  type="text"  name="default_url"><br>-->
+    {{ form.as_p }}
     <input type="submit" value="submit">
 </form>
 </body>
