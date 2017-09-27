@@ -12,11 +12,17 @@
 <form action="{% url 'make_host_file' %}" method="post">{% csrf_token %}
     <label for="ip_addr">Switch section name </label>
     <input  type="text"  name="section_name"><br>
-<h5>Check the switch names correcponding to the section provided</h5>
-    {% for post in display %}
-<input type="checkbox" name="switch" value="{{ post.switch_name }}">{{ post.switch_name }}<br>
-    {% endfor %}
-<input type="submit" value="submit">
+    <h5>Check the switch names correcponding to the section provided</h5>
+    <table style="width:40%">
+        {% for post in display %}
+            <tr>
+                <td><input type="checkbox" name="switch" value="{{ post.switch_name }}">{{ post.switch_name }}</td>
+                <td>{{ post.ip_addr }}</td>
+                <td>{{ post.mac_addr }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    <input type="submit" value="submit">
 </form>
 
 </div>
@@ -25,7 +31,7 @@
 <hr>
 
 <form action="" method="post">{% csrf_token %}
-<!--    <label for="switch_name">Switch name: </label>
+<!-- <label for="switch_name">Switch name: </label>
     <input  type="text"  name="switch_name"><br>
     <label for="ip_addr">Ip address: </label>
     <input  type="text"  name="ip_addr"><br>
