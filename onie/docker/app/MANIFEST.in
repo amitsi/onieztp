@@ -1,0 +1,3 @@
+graft onie/templates
+graft onie/static
+include onie/schema.sql
