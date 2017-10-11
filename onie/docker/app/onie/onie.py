@@ -28,12 +28,30 @@ def initdb_command():
 # MODELS
 #
 
-class DhcpServer(db.Model):
+class DhcpClient(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    hostname = db.Column(db.String(80), unique=True, nullable=False)
+    hostname = db.Column(db.String(80), unique=True, nullable=True)
+    ip = db.Column(db.String(40), unique=True, nullable=False)
+    mac = db.Column(db.String(18), unique=True, nullable=False)
+    default_url = db.Column(db.String(512), nullable=True)
+    server_id = db.Column(db.Integer, db.ForeignKey('dhcp_subnet.id'))
 
     def __repr__(self):
-        return "<DhcpServer {0}>".format(self.hostname)
+        return "<DhcpClient {0}>".format(self.hostname)
+
+class DhcpSubnet(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    subnet = db.Column(db.String(40), nullable=False)
+    subnet_mask = db.Column(db.String(40), nullable=False)
+    dhcp_range_start = db.Column(db.String(40), nullable=False)
+    dhcp_range_end = db.Column(db.String(40), nullable=False)
+    dns_primary = db.Column(db.String(40), nullable=True)
+    dns_secondary = db.Column(db.String(40), nullable=True)
+    domain_name = db.Column(db.String(128), nullable=True)
+    gateway = db.Column(db.String(40), nullable=True)
+    broadcast_address = db.Column(db.String(40), nullable=True)
+
+    clients = db.relationship("DhcpClient")
 
 #
 # VIEWS
@@ -41,15 +59,46 @@ class DhcpServer(db.Model):
 
 @application.route('/')
 def show_entries():
-    dhcp_servers = DhcpServer.query.all()
-    return render_template('show_entries.html', entries=dhcp_servers)
+    server = DhcpSubnet.query.all()
+    if server:
+        server = server[0]
+    clients = DhcpClient.query.all()
+    return render_template('show_entries.html', server=server, entries=clients)
+
+@application.route('/confsubnet', methods=['POST'])
+def configure_subnet():
+    entries = DhcpSubnet.query.all()
+    if entries:
+        entry = entries[0]
+        for p in [ 'subnet', 'subnet_mask', 'dhcp_range_start',
+                   'dhcp_range_end', 'dns_primary', 'dns_secondary',
+                   'domain_name', 'gateway', 'broadcast_address' ]:
+            setattr(entry, p, request.form[p])
+    else:
+        entry = DhcpSubnet(subnet=request.form['subnet'],
+                           subnet_mask=request.form['subnet_mask'],
+                           dhcp_range_start=request.form['dhcp_range_start'],
+                           dhcp_range_end=request.form['dhcp_range_end'],
+                           dns_primary=request.form['dns_primary'],
+                           dns_secondary=request.form['dns_secondary'],
+                           domain_name=request.form['domain_name'],
+                           gateway=request.form['gateway'],
+                           broadcast_address=request.form['broadcast_address'])
+        db.session.add(entry)
+
+    db.session.commit()
+    flash('Subnet details updated')
+    return redirect(url_for('show_entries'))
 
 @application.route('/add', methods=['POST'])
 def add_entry():
-    entry = DhcpServer(hostname=request.form['hostname'])
+    entry = DhcpClient(hostname=request.form['hostname'],
+                       ip=request.form['ip'],
+                       mac=request.form['mac'],
+                       default_url=request.form['default_url'])
     db.session.add(entry)
     db.session.commit()
-    flash('New entry was successfully posted')
+    flash('Host added')
     return redirect(url_for('show_entries'))
 
 if __name__ == "__main__":
