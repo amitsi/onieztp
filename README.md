@@ -55,7 +55,51 @@ spawned uWSGI worker 2 (pid: 14, cores: 1)
 2017-10-11 04:45:27,245 INFO success: nginx entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
 2017-10-11 04:45:27,246 INFO success: uwsgi entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
 
->>Hangs here!!!
+amitsi-5:~ amitsingh$ docker exec -it fb2a1e7ebe4a bash
+root@fb2a1e7ebe4a:/app# ifconfig
+bash: ifconfig: command not found
+root@fb2a1e7ebe4a:/app# ifconfig -a
+bash: ifconfig: command not found
+root@fb2a1e7ebe4a:/app# apt-get install nettools
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+E: Unable to locate package nettools
+root@fb2a1e7ebe4a:/app# apt-get update
+Get:1 http://security.debian.org jessie/updates InRelease [63.1 kB]
+Get:2 http://nginx.org jessie InRelease [2865 B]
+Ign http://deb.debian.org jessie InRelease
+Get:3 http://deb.debian.org jessie-updates InRelease [145 kB]
+Get:4 http://deb.debian.org jessie Release.gpg [2373 B]
+Get:5 http://deb.debian.org jessie Release [148 kB]
+Get:6 http://security.debian.org jessie/updates/main amd64 Packages [547 kB]
+Get:7 http://nginx.org jessie/nginx amd64 Packages [36.0 kB]
+Get:8 http://deb.debian.org jessie-updates/main amd64 Packages [23.1 kB]
+Get:9 http://deb.debian.org jessie/main amd64 Packages [9063 kB]
+Fetched 10.0 MB in 5s (1938 kB/s)
+Reading package lists... Done
+root@fb2a1e7ebe4a:/app# ip link
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+2: tunl0@NONE: <NOARP> mtu 1480 qdisc noop state DOWN mode DEFAULT group default qlen 1
+    link/ipip 0.0.0.0 brd 0.0.0.0
+3: gre0@NONE: <NOARP> mtu 1476 qdisc noop state DOWN mode DEFAULT group default qlen 1
+    link/gre 0.0.0.0 brd 0.0.0.0
+4: gretap0@NONE: <BROADCAST,MULTICAST> mtu 1462 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/ether 00:00:00:00:00:00 brd ff:ff:ff:ff:ff:ff
+5: ip_vti0@NONE: <NOARP> mtu 1332 qdisc noop state DOWN mode DEFAULT group default qlen 1
+    link/ipip 0.0.0.0 brd 0.0.0.0
+6: ip6_vti0@NONE: <NOARP> mtu 1500 qdisc noop state DOWN mode DEFAULT group default qlen 1
+    link/tunnel6 :: brd ::
+7: sit0@NONE: <NOARP> mtu 1480 qdisc noop state DOWN mode DEFAULT group default qlen 1
+    link/sit 0.0.0.0 brd 0.0.0.0
+8: ip6tnl0@NONE: <NOARP> mtu 1452 qdisc noop state DOWN mode DEFAULT group default qlen 1
+    link/tunnel6 :: brd ::
+9: ip6gre0@NONE: <NOARP> mtu 1448 qdisc noop state DOWN mode DEFAULT group default qlen 1
+    link/gre6 00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00 brd 00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00
+33: eth0@if34: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP mode DEFAULT group default
+    link/ether 02:42:ac:11:00:02 brd ff:ff:ff:ff:ff:ff
+root@fb2a1e7ebe4a:/app#
 
 Sample first Run on a MAC (will update later)
 
