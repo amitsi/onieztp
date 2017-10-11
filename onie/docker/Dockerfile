@@ -35,7 +35,6 @@ RUN pip install --editable .
 ENV FLASK_APP onie
 ENV FLASK_DEBUG true
 
-RUN rm -f onie/onie.db
 RUN flask initdb
 
 CMD ["/usr/bin/supervisord"]
