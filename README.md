@@ -3,11 +3,61 @@
 Create a DJANGO based tool to do ONIE, Software Upgrade and Make it available for pncheck troubleshooting
 
 
+docker build 'https://github.com/amitsi/onieztp.git#:onie/docker'
+
+amitsi-5:~ amitsingh$ docker image ls
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+<none>              <none>              cc24247b3d7f        2 minutes ago       726MB
+python              3                   01fd71a97c19        26 hours ago        690MB
 
 
+amitsi-5:~ amitsingh$ docker run cc24247b3d7f
+/usr/lib/python2.7/dist-packages/supervisor/options.py:296: UserWarning: Supervisord is running as root and it is searching for its configuration file in default locations (including its current working directory); you probably want to specify a "-c" argument specifying an absolute path to a configuration file for improved security.
+  'Supervisord is running as root and it is searching '
+2017-10-11 04:45:24,783 CRIT Supervisor running as root (no user in config file)
+2017-10-11 04:45:24,783 WARN Included extra file "/etc/supervisor/conf.d/supervisord.conf" during parsing
+2017-10-11 04:45:24,790 INFO RPC interface 'supervisor' initialized
+2017-10-11 04:45:24,790 CRIT Server 'unix_http_server' running without any HTTP authentication checking
+2017-10-11 04:45:24,790 INFO supervisord started with pid 1
+2017-10-11 04:45:25,793 INFO spawned: 'nginx' with pid 9
+2017-10-11 04:45:25,795 INFO spawned: 'uwsgi' with pid 10
+[uWSGI] getting INI configuration from /app/uwsgi.ini
+[uWSGI] getting INI configuration from /etc/uwsgi/uwsgi.ini
+*** Starting uWSGI 2.0.15 (64bit) on [Wed Oct 11 04:45:25 2017] ***
+compiled with version: 4.9.2 on 11 October 2017 04:35:19
+os: Linux-4.9.49-moby #1 SMP Wed Sep 27 23:17:17 UTC 2017
+nodename: fb2a1e7ebe4a
+machine: x86_64
+clock source: unix
+pcre jit disabled
+detected number of CPU cores: 4
+current working directory: /app
+detected binary path: /usr/local/bin/uwsgi
+your memory page size is 4096 bytes
+detected max file descriptor number: 1048576
+lock engine: pthread robust mutexes
+thunder lock: disabled (you can enable it with --thunder-lock)
+uwsgi socket 0 bound to UNIX address /tmp/uwsgi.sock fd 3
+uWSGI running as root, you can use --uid/--gid/--chroot options
+*** WARNING: you are running uWSGI as root !!! (use the --uid flag) ***
+Python version: 3.6.3 (default, Oct 10 2017, 02:29:16)  [GCC 4.9.2]
+*** Python threads support is disabled. You can enable it with --enable-threads ***
+Python main interpreter initialized at 0xcf6e50
+your server socket listen backlog is limited to 100 connections
+your mercy for graceful operations on workers is 60 seconds
+mapped 1237056 bytes (1208 KB) for 16 cores
+*** Operational MODE: preforking ***
+WSGI app 0 (mountpoint='') ready in 1 seconds on interpreter 0xcf6e50 pid: 10 (default app)
+*** uWSGI is running in multiple interpreter mode ***
+spawned uWSGI master process (pid: 10)
+spawned uWSGI worker 1 (pid: 13, cores: 1)
+spawned uWSGI worker 2 (pid: 14, cores: 1)
+2017-10-11 04:45:27,245 INFO success: nginx entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2017-10-11 04:45:27,246 INFO success: uwsgi entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
 
+>>Hangs here!!!
 
-Sample Run on a MAC (will update later)
+Sample first Run on a MAC (will update later)
 
 amitsi-5:~ amitsingh$ docker build 'https://github.com/amitsi/onieztp.git#:onie/docker'
 Sending build context to Docker daemon  18.94kB
