@@ -15,7 +15,14 @@ docker build -t pluribus-onie-ztp 'https://github.com/amitsi/onieztp.git#:onie/d
 ## Run the image
 
 ```sh
-docker run -p 4000:80 pluribus-onie-ztp
+docker run --net=host pluribus-onie-ztp
 ```
 
 Open the webpage by navigating to http://localhost:4000
+
+*By default, the webserver runs on port 4000.  To change that, pass the
+HTTP_PORT environment variable to the run command:*
+
+```sh
+docker run --net=host -e HTTP_PORT=4050 pluribus-onie-ztp
+```

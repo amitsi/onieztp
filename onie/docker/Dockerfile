@@ -20,7 +20,6 @@ RUN apt-key adv --keyserver hkp://pgp.mit.edu:80 --recv-keys 573BFD6B3D8FBC64107
 # nginx
 RUN ln -sf /dev/stdout /var/log/nginx/access.log \
 	&& ln -sf /dev/stderr /var/log/nginx/error.log
-EXPOSE 80
 
 RUN echo "daemon off;" >> /etc/nginx/nginx.conf
 RUN rm -f /etc/nginx/conf.d/default.conf
@@ -33,7 +32,7 @@ COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 RUN echo "INTERFACES='eth0'" >/etc/default/isc-dhcp-server
 
 ENV UWSGI_INI /app/uwsgi.ini
-EXPOSE 80 67/udp
+ENV HTTP_PORT 4000
 
 # Add demo app
 COPY ./app /app
@@ -45,4 +44,5 @@ ENV FLASK_DEBUG true
 
 RUN flask initdb
 
-CMD ["/usr/bin/supervisord"]
+COPY ./run.sh /
+CMD ["/run.sh"]
