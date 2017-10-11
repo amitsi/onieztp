@@ -6,6 +6,12 @@
 docker build -t pluribus-onie-ztp .
 ```
 
+Or if you'd rather not clone the repo to build the image:
+
+```sh
+docker build 'https://github.com/amitsi/onieztp.git#:onie/docker'
+```
+
 ## Run the image
 
 ```sh
