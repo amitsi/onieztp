@@ -1,0 +1,57 @@
+#DHCP SERVER CONF FILE
+# option definitions common to all supported networks...
+default-lease-time 600;
+max-lease-time 7200;
+# If this DHCP server is the official DHCP server for the local
+# network, the authoritative directive should be uncommented.
+authoritative;
+# Use this to send dhcp log messages to a different log file (you also
+# have to hack syslog.conf to complete the redirection).
+log-facility local7;
+ 
+subnet 10.9.0.0 netmask 255.255.0.0 {  #network
+#  range 10.9.31.142 10.9.31.149; # Range
+  option domain-name-servers 10.9.10.1, 10.20.4.1; #Pri DNS , Sec DNS
+  option domain-name "pluribusnetworks.com"; #Domain name
+  option routers 10.9.9.1; #Gateway
+  option broadcast-address 10.9.255.255; #Broadcast
+  default-lease-time 600;
+  max-lease-time 7200;
+}
+ 
+host onie3 {
+  hardware ethernet 8C:EA:1B:36:B7:33;
+  fixed-address 10.9.31.213;
+  option host-name "onie3";
+  option default-url="http://10.9.8.196/images/onie-installer";
+}
+host onie4 {
+  hardware ethernet 8c:ea:1b:36:b6:55;
+  fixed-address 10.9.31.214;
+  option host-name "onie4";
+  option default-url="http://10.9.8.196/images/onie-installer";
+}
+host onie5 {
+  hardware ethernet 8C:EA:1B:53:EE:12;
+  fixed-address 10.9.31.215;
+  option host-name "onie5";
+  option default-url="http://10.9.8.196/images/onie-installer";
+}
+host onie6 {
+  hardware ethernet 8C:EA:1B:36:B6:9F;
+  fixed-address 10.9.31.216;
+  option host-name "onie6";
+  option default-url="http://10.9.8.196/images/onie-installer";
+}
+host onie8 {
+  hardware ethernet 8C:EA:1B:36:B6:E9;
+  fixed-address 10.9.31.218;
+  option host-name "onie8";
+  option default-url="http://10.9.8.196/images/onie-installer";
+}
+host onie9 {
+  hardware ethernet 66:0e:94:b9:76:f4;
+  fixed-address 10.9.31.229;
+  option host-name "onie9";
+  option default-url="http://10.9.8.196/images/onie-installer";
+}

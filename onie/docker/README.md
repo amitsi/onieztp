@@ -26,3 +26,13 @@ HTTP_PORT environment variable to the run command:*
 ```sh
 docker run --net=host -e HTTP_PORT=4050 pluribus-onie-ztp
 ```
+
+## Manage the DHCP server after launching the container
+
+```sh
+CONTAINER=$( docker ps --format '{{.ID}} {{.Image}}' | awk '$2 == "pluribus-onie-ztp" { print $1 }' )
+
+docker exec ${CONTAINER:-NOTRUNNING} supervisorctl status dhcpd
+docker exec ${CONTAINER:-NOTRUNNING} supervisorctl start dhcpd
+docker exec ${CONTAINER:-NOTRUNNING} supervisorctl stop dhcpd
+```

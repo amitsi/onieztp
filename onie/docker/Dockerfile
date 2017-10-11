@@ -29,10 +29,10 @@ COPY uwsgi.ini /etc/uwsgi/
 
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-RUN echo "INTERFACES='eth0'" >/etc/default/isc-dhcp-server
 
 ENV UWSGI_INI /app/uwsgi.ini
 ENV HTTP_PORT 4000
+ENV DHCP_INTERFACE eth0
 
 # Add demo app
 COPY ./app /app
@@ -43,6 +43,10 @@ ENV FLASK_APP onie
 ENV FLASK_DEBUG true
 
 RUN flask initdb
+
+# XXX: TEST CODE BEGIN
+COPY dhcpd.conf.sample /etc/dhcp/dhcpd.conf
+# XXX: TEST CODE END
 
 COPY ./run.sh /
 CMD ["/run.sh"]
