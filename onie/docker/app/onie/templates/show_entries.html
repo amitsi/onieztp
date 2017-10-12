@@ -1,5 +1,15 @@
 {% extends "layout.html" %}
 {% block body %}
+    <h3>Configure ONIE Details</h3>
+    <p/>
+    <form action="{{ url_for('configure_onie') }}" method=post class="add-entry">
+      <table>
+        <tr><th>ONIE Version:</th><td><input type="text" size="40" name="onie_version" value="{{ onie.onie_version }}"/></td></tr>
+        <tr><th>PN Cloud Username:</th><td><input type="text" size="40" name="username" value="{{ onie.username }}"/></td></tr>
+        <tr><th>PN Cloud Password:</th><td><input type="password" size="40" name="password"/></td></tr>
+        <tr><td/><td><input type="submit" value="Set"/></td></tr>
+      </table>
+    </form>
     <h3>Configure the DHCP subnet</h3>
     <form action="{{ url_for('configure_subnet') }}" method=post class="add-entry">
       <table>
@@ -20,22 +30,33 @@
     <form action="{{ url_for('add_entry') }}" method=post class=add-entry>
       <table>
         <tr><th>Hostname:</th><td><input type="text" size="40" name="hostname"/></td></tr>
-        <tr><th>IP::</th><td><input type="text" size="40" name="ip"/></td></tr>
-        <tr><th>MAC::</th><td><input type="text" size="40" name="mac"/></td></tr>
-        <tr><th>Default URL:</th><td><input type="text" size="40" name="default_url"/></td></tr>
+        <tr><th>IP:</th><td><input type="text" size="40" name="ip"/></td></tr>
+        <tr><th>MAC:</th><td><input type="text" size="40" name="mac"/></td></tr>
+        <tr><th>Tag:</th><td><input type="text" size="40" name="tag"/></td></tr>
+        <tr><th>Device ID:</th><td><input type="text" size="40" name="device_id"/></td></tr>
+        <tr><th>Device Type:</th><td><input type="text" size="40" name="device_type"/></td></tr>
         <tr><td/><td><input type="submit" value="Add"/></td></tr>
       </table>
     </form>
 
   <ul class=entries>
   <table class="paddedcells">
-  <tr><th>Hostname</th><th>IP</th><th>MAC</th><th>Default URL</th></tr>
+    <tr><th>Hostname</th><th>IP</th><th>MAC</th><th>Tag</th><th>Device ID</th><th>Device Type</th></tr>
   {% for entry in entries %}
     <tr><th>{{ entry.hostname }}</th>
         <td>{{ entry.ip }}</td>
         <td>{{ entry.mac }}</td>
-        <td>{{ entry.default_url }}</td>
+        <td>{{ entry.tag }}</td>
+        <td>{{ entry.device_id }}</td>
+        <td>{{ entry.device_type }}</td>
     </tr>
   {% endfor %}
   </table>
+  <p/>
+  <hr/>
+  <ul>
+    {% if onie.username and onie.password and onie.onie_version %}
+      <li><a href="/launch">Launch Server</a></li>
+    {% endif %}
+  </ul>
 {% endblock %}
