@@ -18,6 +18,12 @@ docker build -t pluribus-onie-ztp 'https://github.com/amitsi/onieztp.git#:onie/d
 docker run --net=host pluribus-onie-ztp
 ```
 
+**NOTE**: On macOS, the `--net=host` parameter is ignored.  You can check the web interface by explicitly mapping ports using the following command, but _DHCP won't work_:
+
+```sh
+docker run -p 4000:4000 pluribus-onie-ztp
+```
+
 Open the webpage by navigating to http://localhost:4000
 
 *By default, the webserver runs on port 4000.  To change that, pass the
