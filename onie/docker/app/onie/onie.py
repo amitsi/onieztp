@@ -1,6 +1,7 @@
 import os
 import re
 import requests
+import subprocess
 import sqlite3
 from flask import Flask, request, session, g, redirect, url_for, abort, \
      render_template, flash
@@ -35,8 +36,15 @@ PNC_ORDER_DETAILS = 'https://cloud-web.pluribusnetworks.com/api/orderDetails'
 PNC_ORDER_ACTIVATION = 'https://cloud-web.pluribusnetworks.com/api/orderActivations'
 PNC_ACTIVATION_KEY_FOR = 'https://cloud-web.pluribusnetworks.com/api/offline_bundle/{0}'.format
 
+WWW_ROOT = '/var/www/html/images'
+ONIE_INSTALLER_PATH = os.path.join(WWW_ROOT, 'onie-installer')
+LICENCE_PATH_10G = os.path.join(WWW_ROOT, 'license_10g/onvl-activation-keys')
+LICENCE_PATH_40G = os.path.join(WWW_ROOT, 'license_40g/onvl-activation-keys')
+
 DEVICE_TYPE_10G = '10g'
 DEVICE_TYPE_40G = '40g'
+
+IP_ADDR_RE = re.compile(r'^\s*inet ([\d\.]+)')
 
 ACTIVATION_KEY_FILES = {
     DEVICE_TYPE_10G: '/tmp/license_10g.activationkey',
@@ -177,8 +185,33 @@ class DhcpSubnet(db.Model):
     domain_name = db.Column(db.String(128), nullable=True)
     gateway = db.Column(db.String(40), nullable=True)
     broadcast_address = db.Column(db.String(40), nullable=True)
+    dhcp_interface = db.Column(db.String(40), nullable=True)
 
     clients = db.relationship("DhcpClient")
+
+    @property
+    def server_ip(self):
+        if self.dhcp_interface:
+            intf = self.dhcp_interface
+        else:
+            intf = os.environ.get('DHCP_INTERFACE', 'eth0')
+
+        p = subprocess.Popen(['ip', 'addr', 'show', intf],
+                stdout=subprocess.PIPE)
+        (stdout, stderr) = p.communicate()
+        myip = None
+        for line in stdout.splitlines():
+            m = IP_ADDR_RE.search(line.decode('ascii'))
+            if m:
+                myip = m.group(1)
+                break
+
+        print("Server IP: \"{0}\"".format(myip))
+        return myip
+
+    @property
+    def server_port(self):
+        return int(os.environ.get('HTTP_PORT', '0'))
 
 class OnieInstaller(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -209,12 +242,14 @@ def configure_subnet():
         entry = entries[0]
         for p in [ 'subnet', 'subnet_mask', 'dhcp_range_start',
                    'dhcp_range_end', 'dns_primary', 'dns_secondary',
-                   'domain_name', 'gateway', 'broadcast_address' ]:
+                   'domain_name', 'gateway', 'broadcast_address',
+                   'dhcp_interface' ]:
             if request.form[p]:
                 setattr(entry, p, request.form[p])
     else:
         entry = DhcpSubnet(subnet=request.form['subnet'],
                            subnet_mask=request.form['subnet_mask'],
+                           dhcp_interface=request.form['dhcp_interface'],
                            dhcp_range_start=request.form['dhcp_range_start'],
                            dhcp_range_end=request.form['dhcp_range_end'],
                            dns_primary=request.form['dns_primary'],
@@ -259,8 +294,67 @@ def add_entry():
     flash('Host added')
     return redirect(url_for('show_entries'))
 
-@application.route('/launch', methods=['GET'])
-def launch():
+@application.route('/remove/<int:entry_id>', methods=['GET'])
+def remove_entry(entry_id):
+    entry = DhcpClient.query.filter_by(id=entry_id).first()
+    if entry:
+        db.session.delete(entry)
+        db.session.commit()
+        flash("Removed switch entry")
+    else:
+        flash("Switch does not exist")
+
+    return redirect(url_for('show_entries'))
+
+@application.route('/uploadonie', methods=['GET', 'POST'])
+def upload_onie():
+    if request.method == 'POST':
+        # Upload ONIE installer
+        if 'onie_installer' not in request.files:
+            flash('File not provided')
+            return redirect(url_for('show_entries'))
+
+        onie_installer = request.files['onie_installer']
+        if onie_installer.filename == '':
+            flash("No file selected")
+            return redirect(url_for('show_entries'))
+
+        if not onie_installer:
+            flash("Failed to upload ONIE installer")
+            return redirect(url_for('show_entries'))
+
+        onie_installer.save(ONIE_INSTALLER_PATH)
+        flash("ONIE installer uploaded")
+        return redirect(url_for('show_entries'))
+    else:
+        return render_template("upload_onie.html")
+
+@application.route('/uploadlic', methods=['GET', 'POST'])
+def upload_licences():
+    if request.method == 'POST':
+        if '10g_license' not in request.files \
+                or '40g_license' not in request.files:
+            flash("Files not provided")
+            return redirect(url_for('show_entries'))
+
+        licence_10g = request.files['10g_license']
+        licence_40g = request.files['40g_license']
+        if licence_10g.filename == '' or licence_40g.filename == '':
+            flash("Licence files not selected")
+            return redirect(url_for('show_entries'))
+
+        if not licence_10g or not licence_40g:
+            flash("Failed to upload licences")
+            return redirect(url_for('show_entries'))
+
+        licence_10g.save(LICENCE_PATH_10G)
+        licence_40g.save(LICENCE_PATH_40G)
+        flash("Licenses uploaded")
+        return redirect(url_for('show_entries'))
+    else:
+        return render_template("upload_licenses.html")
+
+def launch_online():
     pnc = PnCloud.get()
     pnc.login()
     det = pnc.order_details()
@@ -289,7 +383,15 @@ def launch():
                 "device_ids": client.device_id}
         activation = pnc.activate(device)
 
+def launch_offline():
+    server = DhcpSubnet.query.all()
+    if server:
+        server = server[0]
+    print(server.server_ip)
 
+@application.route('/launch', methods=['GET'])
+def launch():
+    launch_offline()
     flash('DHCP/ONIE server launched')
     return redirect(url_for('show_entries'))
 

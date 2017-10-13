@@ -29,6 +29,7 @@ COPY uwsgi.ini /etc/uwsgi/
 
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
+RUN mkdir -p /var/www/html/images/license_10g /var/www/html/images/license_40g
 
 ENV UWSGI_INI /app/uwsgi.ini
 ENV HTTP_PORT 4000

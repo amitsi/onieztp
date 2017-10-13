@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+{% block body %}
+    <h3>Upload Licenses</h3>
+    <form action="{{ url_for('upload_licences') }}" method=post enctype="multipart/form-data">
+      <p><label>10G Activation Key:<input type="file" name="10g_license"/></label><br/>
+         <label>40G Activation Key:<input type="file" name="40g_license"/></label><br/>
+         <input type="submit" value="Upload"/>
+    </form>
+{% endblock %}

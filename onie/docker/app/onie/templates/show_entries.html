@@ -4,24 +4,26 @@
     <p/>
     <form action="{{ url_for('configure_onie') }}" method=post class="add-entry">
       <table>
-        <tr><th>ONIE Version:</th><td><input type="text" size="40" name="onie_version" value="{{ onie.onie_version }}"/></td></tr>
-        <tr><th>PN Cloud Username:</th><td><input type="text" size="40" name="username" value="{{ onie.username }}"/></td></tr>
-        <tr><th>PN Cloud Password:</th><td><input type="password" size="40" name="password"/></td></tr>
+        <tr><th>ONIE Version:</th><td><input type="text" size="40" name="onie_version" value="{{ onie.onie_version }}" placeholder="2.6.1-2060112059"/></td></tr>
+        <tr><th>PN Cloud Username:</th><td><input type="text" size="40" name="username" value="{{ onie.username }}" placeholder="user@example.com"/></td></tr>
+        <tr><th>PN Cloud Password:</th><td><input type="password" size="40" name="password" placeholder="{% if onie.password %}password set{% endif %}"/></td></tr>
         <tr><td/><td><input type="submit" value="Set"/></td></tr>
       </table>
     </form>
     <h3>Configure the DHCP subnet</h3>
     <form action="{{ url_for('configure_subnet') }}" method=post class="add-entry">
       <table>
-        <tr><th>Subnet:</th><td><input type="text" size="40" name="subnet" value="{{ server.subnet }}"/></td></tr>
-        <tr><th>Subnet Mask:</th><td><input type="text" size="40" name="subnet_mask" value="{{ server.subnet_mask }}"/></td></tr>
-        <tr><th>DHCP Range Start:</th><td><input type="text" size="40" name="dhcp_range_start" value="{{ server.dhcp_range_start }}"/></td></tr>
-        <tr><th>DHCP Range End:</th><td><input type="text" size="40" name="dhcp_range_end" value="{{ server.dhcp_range_end }}"/></td></tr>
-        <tr><th>Primary DNS:</th><td><input type="text" size="40" name="dns_primary" value="{{ server.dns_primary }}"/></td></tr>
-        <tr><th>Secondary DNS:</th><td><input type="text" size="40" name="dns_secondary" value="{{ server.dns_secondary }}"/></td></tr>
-        <tr><th>Domain Name:</th><td><input type="text" size="40" name="domain_name" value="{{ server.domain_name }}"/></td></tr>
-        <tr><th>Gateway:</th><td><input type="text" size="40" name="gateway" value="{{ server.gateway }}"/></td></tr>
-        <tr><th>Broadcast Address:</th><td><input type="text" size="40" name="broadcast_address" value="{{ server.broadcast_address }}"/></td></tr>
+        <tr><th>Subnet:</th><td><input type="text" size="40" name="subnet" value="{{ server.subnet }}" placeholder="10.9.0.0"/></td></tr>
+        <tr><th>Subnet Mask:</th><td><input type="text" size="40" name="subnet_mask" value="{{ server.subnet_mask }}" placeholder="255.255.0.0"/></td></tr>
+        <tr><th>DHCP Interface</th><td><input type="text" size="40" name="dhcp_interface" value="{{ server.dhcp_interface }}" placeholder="eth0"/>
+            {% if server.server_ip %}<small>(Server IP: {{ server.server_ip }})</small>{% endif %}</td></tr>
+        <tr><th>DHCP Range Start:</th><td><input type="text" size="40" name="dhcp_range_start" value="{{ server.dhcp_range_start }}" placeholder="10.9.31.142"/></td></tr>
+        <tr><th>DHCP Range End:</th><td><input type="text" size="40" name="dhcp_range_end" value="{{ server.dhcp_range_end }}" placeholder="10.9.31.149"/></td></tr>
+        <tr><th>Primary DNS:</th><td><input type="text" size="40" name="dns_primary" value="{{ server.dns_primary }}" placeholder="10.9.10.1"/></td></tr>
+        <tr><th>Secondary DNS:</th><td><input type="text" size="40" name="dns_secondary" value="{{ server.dns_secondary }}" placeholder="10.20.4.1"/></td></tr>
+        <tr><th>Domain Name:</th><td><input type="text" size="40" name="domain_name" value="{{ server.domain_name }}" placeholder="pluribusnetworks.com"/></td></tr>
+        <tr><th>Gateway:</th><td><input type="text" size="40" name="gateway" value="{{ server.gateway }}" placeholder="10.9.9.1"/></td></tr>
+        <tr><th>Broadcast Address:</th><td><input type="text" size="40" name="broadcast_address" value="{{ server.broadcast_address }}" placeholder="10.9.255.255"/></td></tr>
         <tr><td/><td><input type="submit" value="Set"/></td></tr>
       </table>
     </form>
@@ -29,19 +31,19 @@
     <h3>Add a Host Entry</h3>
     <form action="{{ url_for('add_entry') }}" method=post class=add-entry>
       <table>
-        <tr><th>Hostname:</th><td><input type="text" size="40" name="hostname"/></td></tr>
-        <tr><th>IP:</th><td><input type="text" size="40" name="ip"/></td></tr>
-        <tr><th>MAC:</th><td><input type="text" size="40" name="mac"/></td></tr>
-        <tr><th>Tag:</th><td><input type="text" size="40" name="tag"/></td></tr>
-        <tr><th>Device ID:</th><td><input type="text" size="40" name="device_id"/></td></tr>
-        <tr><th>Device Type:</th><td><input type="text" size="40" name="device_type"/></td></tr>
+        <tr><th>Hostname:</th><td><input type="text" size="40" name="hostname" placeholder="switch1"/></td></tr>
+        <tr><th>IP:</th><td><input type="text" size="40" name="ip" placeholder="10.9.31.214"/></td></tr>
+        <tr><th>MAC:</th><td><input type="text" size="40" name="mac" placeholder="8C:EA:1B:36:FF:FF"/></td></tr>
+        <tr><th>Tag:</th><td><input type="text" size="40" name="tag" placeholder="spine"/></td></tr>
+        <tr><th>Device ID:</th><td><input type="text" size="40" name="device_id" placeholder="638064ffffff"/></td></tr>
+        <tr><th>Device Type:</th><td><input type="text" size="40" name="device_type" placeholder="40g"/></td></tr>
         <tr><td/><td><input type="submit" value="Add"/></td></tr>
       </table>
     </form>
 
   <ul class=entries>
   <table class="paddedcells">
-    <tr><th>Hostname</th><th>IP</th><th>MAC</th><th>Tag</th><th>Device ID</th><th>Device Type</th></tr>
+      <tr><th>Hostname</th><th>IP</th><th>MAC</th><th>Tag</th><th>Device ID</th><th>Device Type</th><td/></tr>
   {% for entry in entries %}
     <tr><th>{{ entry.hostname }}</th>
         <td>{{ entry.ip }}</td>
@@ -49,14 +51,16 @@
         <td>{{ entry.tag }}</td>
         <td>{{ entry.device_id }}</td>
         <td>{{ entry.device_type }}</td>
+        <td><a href="{{ url_for('remove_entry', entry_id=entry.id) }}">remove</a></td>
     </tr>
   {% endfor %}
   </table>
   <p/>
   <hr/>
-  <ul>
-    {% if onie.username and onie.password and onie.onie_version %}
-      <li><a href="/launch">Launch Server</a></li>
-    {% endif %}
-  </ul>
+  <a href="/images">Download installers and activation keys</a><br/>
+  <a href="{{ url_for('upload_onie') }}">Upload ONIE Installer</a><br/>
+  <a href="{{ url_for('upload_licences') }}">Upload Licences</a><br/>
+  {% if onie.username and onie.password and onie.onie_version %}
+  <a href="/launch">Launch Server</a><br/>
+  {% endif %}
 {% endblock %}
