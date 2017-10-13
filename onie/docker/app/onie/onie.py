@@ -1,3 +1,4 @@
+from netaddr import IPNetwork
 import os
 import re
 import requests
@@ -44,7 +45,7 @@ LICENCE_PATH_40G = os.path.join(WWW_ROOT, 'license_40g/onvl-activation-keys')
 DEVICE_TYPE_10G = '10g'
 DEVICE_TYPE_40G = '40g'
 
-IP_ADDR_RE = re.compile(r'^\s*inet ([\d\.]+)')
+IP_ADDR_RE = re.compile(r'^\s*inet ([\d\.]+/\d{1,2})')
 
 ACTIVATION_KEY_FILES = {
     DEVICE_TYPE_10G: '/tmp/license_10g.activationkey',
@@ -186,16 +187,19 @@ class DhcpSubnet(db.Model):
     gateway = db.Column(db.String(40), nullable=True)
     broadcast_address = db.Column(db.String(40), nullable=True)
     dhcp_interface = db.Column(db.String(40), nullable=True)
+    default_url = db.Column(db.String(256), nullable=True)
 
     clients = db.relationship("DhcpClient")
 
-    @property
-    def server_ip(self):
-        if self.dhcp_interface:
-            intf = self.dhcp_interface
-        else:
-            intf = os.environ.get('DHCP_INTERFACE', 'eth0')
+    @classmethod
+    def get(klass):
+        inst = klass.query.all()
+        if inst:
+            return inst[0]
+        return None
 
+    @classmethod
+    def ip_for_interface(klass, intf):
         p = subprocess.Popen(['ip', 'addr', 'show', intf],
                 stdout=subprocess.PIPE)
         (stdout, stderr) = p.communicate()
@@ -205,6 +209,19 @@ class DhcpSubnet(db.Model):
             if m:
                 myip = m.group(1)
                 break
+        return IPNetwork(myip)
+
+    @property
+    def server_ip(self):
+        if self.dhcp_interface:
+            intf = self.dhcp_interface
+        else:
+            intf = os.environ.get('DHCP_INTERFACE', 'eth0')
+
+        myip = DhcpSubnet.ip_for_interface(intf)
+        if not myip:
+            print("Failed to obtain IP for interface: {0}".format(intf))
+            return None
 
         print("Server IP: \"{0}\"".format(myip))
         return myip
@@ -219,44 +236,52 @@ class OnieInstaller(db.Model):
     username = db.Column(db.String(40), nullable=True)
     password = db.Column(db.String(40), nullable=True)
 
+    @classmethod
+    def get(klass):
+        inst = klass.query.all()
+        if inst:
+            return inst[0]
+        return None
+
 #
 # VIEWS
 #
 
 @application.route('/')
 def show_entries():
-    server = DhcpSubnet.query.all()
-    if server:
-        server = server[0]
+    server = DhcpSubnet.get()
     clients = DhcpClient.query.all()
-    onie = OnieInstaller.query.all()
-    if onie:
-        onie = onie[0]
+    onie = OnieInstaller.get()
     return render_template('show_entries.html', server=server,
             entries=clients, onie=onie)
 
 @application.route('/confsubnet', methods=['POST'])
 def configure_subnet():
-    entries = DhcpSubnet.query.all()
-    if entries:
-        entry = entries[0]
-        for p in [ 'subnet', 'subnet_mask', 'dhcp_range_start',
-                   'dhcp_range_end', 'dns_primary', 'dns_secondary',
-                   'domain_name', 'gateway', 'broadcast_address',
-                   'dhcp_interface' ]:
-            if request.form[p]:
-                setattr(entry, p, request.form[p])
+    entry = DhcpSubnet.get()
+    old_dhcp_interface = None
+    if entry:
+        old_dhcp_interface = entry.dhcp_interface
+    params = {}
+    for p in [ 'subnet', 'subnet_mask', 'dhcp_range_start',
+               'dhcp_range_end', 'dns_primary', 'dns_secondary',
+               'domain_name', 'gateway', 'broadcast_address',
+               'dhcp_interface', 'default_url' ]:
+        params[p] = request.form[p]
+
+    if request.form['dhcp_interface'] and \
+            old_dhcp_interface != request.form['dhcp_interface']:
+        print("Computing network parameters")
+        ip = DhcpSubnet.ip_for_interface(request.form['dhcp_interface'])
+        params['subnet'] = str(ip.network)
+        params['subnet_mask'] = str(ip.netmask)
+        params['broadcast_address'] = str(ip.broadcast)
+
+    if entry:
+        for p in params:
+            if params[p]:
+                setattr(entry, p, params[p])
     else:
-        entry = DhcpSubnet(subnet=request.form['subnet'],
-                           subnet_mask=request.form['subnet_mask'],
-                           dhcp_interface=request.form['dhcp_interface'],
-                           dhcp_range_start=request.form['dhcp_range_start'],
-                           dhcp_range_end=request.form['dhcp_range_end'],
-                           dns_primary=request.form['dns_primary'],
-                           dns_secondary=request.form['dns_secondary'],
-                           domain_name=request.form['domain_name'],
-                           gateway=request.form['gateway'],
-                           broadcast_address=request.form['broadcast_address'])
+        entry = DhcpSubnet(**params)
         db.session.add(entry)
 
     db.session.commit()
@@ -265,9 +290,8 @@ def configure_subnet():
 
 @application.route('/onie', methods=['POST'])
 def configure_onie():
-    entries = OnieInstaller.query.all()
-    if entries:
-        entry = entries[0]
+    entry = OnieInstaller.get()
+    if entry:
         for p in ['onie_version', 'username', 'password']:
             if request.form[p]:
                 setattr(entry, p, request.form[p])

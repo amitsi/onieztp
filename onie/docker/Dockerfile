@@ -5,6 +5,7 @@ ENV NGINX_VERSION 1.13.5-2~jessie
 RUN pip install \
 	flask \
 	flask_sqlalchemy \
+	netaddr \
 	requests \
 	uwsgi
 

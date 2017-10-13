@@ -13,17 +13,18 @@
     <h3>Configure the DHCP subnet</h3>
     <form action="{{ url_for('configure_subnet') }}" method=post class="add-entry">
       <table>
+        <tr><th>DHCP Interface</th><td><input type="text" size="40" name="dhcp_interface" value="{{ server.dhcp_interface }}" placeholder="eth0"/>
+            {% if server.server_ip %}<small>(Server IP: {{ server.server_ip.ip }})</small>{% endif %}</td></tr>
         <tr><th>Subnet:</th><td><input type="text" size="40" name="subnet" value="{{ server.subnet }}" placeholder="10.9.0.0"/></td></tr>
         <tr><th>Subnet Mask:</th><td><input type="text" size="40" name="subnet_mask" value="{{ server.subnet_mask }}" placeholder="255.255.0.0"/></td></tr>
-        <tr><th>DHCP Interface</th><td><input type="text" size="40" name="dhcp_interface" value="{{ server.dhcp_interface }}" placeholder="eth0"/>
-            {% if server.server_ip %}<small>(Server IP: {{ server.server_ip }})</small>{% endif %}</td></tr>
+        <tr><th>Broadcast Address:</th><td><input type="text" size="40" name="broadcast_address" value="{{ server.broadcast_address }}" placeholder="10.9.255.255"/></td></tr>
         <tr><th>DHCP Range Start:</th><td><input type="text" size="40" name="dhcp_range_start" value="{{ server.dhcp_range_start }}" placeholder="10.9.31.142"/></td></tr>
         <tr><th>DHCP Range End:</th><td><input type="text" size="40" name="dhcp_range_end" value="{{ server.dhcp_range_end }}" placeholder="10.9.31.149"/></td></tr>
         <tr><th>Primary DNS:</th><td><input type="text" size="40" name="dns_primary" value="{{ server.dns_primary }}" placeholder="10.9.10.1"/></td></tr>
         <tr><th>Secondary DNS:</th><td><input type="text" size="40" name="dns_secondary" value="{{ server.dns_secondary }}" placeholder="10.20.4.1"/></td></tr>
         <tr><th>Domain Name:</th><td><input type="text" size="40" name="domain_name" value="{{ server.domain_name }}" placeholder="pluribusnetworks.com"/></td></tr>
         <tr><th>Gateway:</th><td><input type="text" size="40" name="gateway" value="{{ server.gateway }}" placeholder="10.9.9.1"/></td></tr>
-        <tr><th>Broadcast Address:</th><td><input type="text" size="40" name="broadcast_address" value="{{ server.broadcast_address }}" placeholder="10.9.255.255"/></td></tr>
+        <tr><th>Default URL:</th><td><input type="text" size="40" name="default_url" value="{{ server.default_url }}" placeholder="http://{% if server.server_ip %}{{ server.server_ip.ip }}{% else %}10.9.10.127{% endif %}:{{ server.server_port or '4000' }}/images/onie-installer"></td></tr>
         <tr><td/><td><input type="submit" value="Set"/></td></tr>
       </table>
     </form>
