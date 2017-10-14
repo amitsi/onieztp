@@ -38,7 +38,7 @@
       </table>
     </form>
     <p/>
-    <h3>Add a Host Entry</h3>
+    <h3>Add a DHCP Host Entry</h3>
     <form action="{{ url_for('add_entry') }}" method=post class=add-entry>
       <table>
         <tr><th>Hostname:</th><td><input type="text" size="40" name="hostname" placeholder="switch1"/></td></tr>
@@ -52,10 +52,12 @@
     </form>
 
   <ul class=entries>
+  <form action="{{url_for('ansible_hosts') }}" method="post">
   <table class="paddedcells">
-      <tr><th>Hostname</th><th>IP</th><th>MAC</th><th>Tag</th><th>Device ID</th><th>Device Type</th><td/></tr>
+    <tr><th/><th>Hostname</th><th>IP</th><th>MAC</th><th>Tag</th><th>Device ID</th><th>Device Type</th><td/></tr>
   {% for entry in entries %}
-    <tr><th>{{ entry.hostname }}</th>
+    <tr><td><input type="checkbox" name="switch" value="{{ entry.hostname }}"/></td>
+        <th>{{ entry.hostname }}</th>
         <td>{{ entry.ip }}</td>
         <td>{{ entry.mac }}</td>
         <td>{{ entry.tag }}</td>
@@ -64,13 +66,14 @@
         <td><a href="{{ url_for('remove_entry', entry_id=entry.id) }}">remove</a></td>
     </tr>
   {% endfor %}
+    <tr><td colspan="8" align="left"><input type="submit" value="Generate Ansible Hosts File for Selected Switches"/></td></tr>
   </table>
+  </form>
   <p/>
   <hr/>
   <a href="/images">Download installers and activation keys</a><br/>
   <a href="{{ url_for('upload_onie') }}">Upload ONIE Installer</a><br/>
   <a href="{{ url_for('upload_licences') }}">Upload Licences</a><br/>
-  <a href="{{ url_for('ansible_hosts') }}">Download Ansible hosts file</a><br/>
   {% if onie.username and onie.password and onie.onie_version %}
   <a href="/launch">Launch Server</a><br/>
   {% endif %}

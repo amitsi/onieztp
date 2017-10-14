@@ -442,8 +442,9 @@ def generate_dhcpd_conf():
     clients = DhcpClient.query.all()
     return render_template("dhcpd.conf", server=server, clients=clients)
 
-def generate_ansible_hosts_file():
-    clients = DhcpClient.query.all()
+def generate_ansible_hosts_file(switchnames):
+    clients = DhcpClient.query.filter(DhcpClient.hostname.in_(switchnames))
+    #clients = DhcpClient.query.all()
     if not clients:
         return ''
 
@@ -535,9 +536,19 @@ def launch():
     flash('DHCP/ONIE server launched')
     return redirect(url_for('show_entries'))
 
-@application.route('/ansiblehosts', methods=['GET'])
+@application.route('/ansiblehosts', methods=['GET', 'POST'])
 def ansible_hosts():
-    hosts = generate_ansible_hosts_file()
+    if request.method == 'GET':
+        argsrc = request.args
+    else:
+        argsrc = request.form
+    switches = argsrc.getlist('switch')
+    if not switches:
+        flash("No switches selected")
+        return redirect(url_for('show_entries'))
+
+    print("Generating Ansible hosts file for: {0}".format(switches))
+    hosts = generate_ansible_hosts_file(switches)
     if not hosts:
         flash("Faled to generate Ansible hosts file")
         return redirect(url_for('show_entries'))
