@@ -10,6 +10,15 @@
         <tr><td/><td><input type="submit" value="Set"/></td></tr>
       </table>
     </form>
+    <h3>Configure Ansible</h3>
+    <p/>
+    <form action="{{ url_for('configure_ansible') }}" method=post class="add-entry">
+      <table>
+        <tr><th>SSH Username:</th><td><input type="text" size="40" name="ssh_user" value="{{ ansible.ssh_user }}" placeholder="pluribus"/></td></tr>
+        <tr><th>SSH Password:</th><td><input type="password" size="40" name="ssh_pass" placeholder="{% if ansible.ssh_pass %}password set{% endif %}"/></td></tr>
+        <tr><td/><td><input type="submit" value="Set"/></td></tr>
+      </table>
+    </form>
     <h3>Configure the DHCP subnet</h3>
     <form action="{{ url_for('configure_subnet') }}" method=post class="add-entry">
       <table>
@@ -61,6 +70,7 @@
   <a href="/images">Download installers and activation keys</a><br/>
   <a href="{{ url_for('upload_onie') }}">Upload ONIE Installer</a><br/>
   <a href="{{ url_for('upload_licences') }}">Upload Licences</a><br/>
+  <a href="{{ url_for('ansible_hosts') }}">Download Ansible hosts file</a><br/>
   {% if onie.username and onie.password and onie.onie_version %}
   <a href="/launch">Launch Server</a><br/>
   {% endif %}

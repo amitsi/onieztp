@@ -4,7 +4,7 @@ import re
 import requests
 import subprocess
 import sqlite3
-from flask import Flask, request, session, g, redirect, url_for, abort, \
+from flask import Flask, Response, request, session, g, redirect, url_for, abort, \
      render_template, flash
 from flask_sqlalchemy import SQLAlchemy
 
@@ -47,9 +47,33 @@ DEVICE_TYPE_40G = '40g'
 
 IP_ADDR_RE = re.compile(r'^\s*inet ([\d\.]+/\d{1,2})')
 
+DHCPD_CONFIG = '/etc/dhcp/dhcpd.conf'
 ACTIVATION_KEY_FILES = {
-    DEVICE_TYPE_10G: '/tmp/license_10g.activationkey',
-    DEVICE_TYPE_40G: '/tmp/license_40g.activationkey',
+    DEVICE_TYPE_10G: os.path.join(WWW_ROOT, 'license_10g/onvl-activation-keys'),
+    DEVICE_TYPE_40G: os.path.join(WWW_ROOT, 'license_40g/onvl-activation-keys'),
+}
+
+SUPERVISOR = 'supervisorctl'
+DHCPD_PROC = 'dhcpd'
+
+DEFAULTS = {
+    'DhcpSubnet': {
+        'subnet': '10.9.0.0',
+        'subnet_mask': '255.255.0.0',
+        'dhcp_interface': 'eth0',
+        'dhcp_range_start': '10.9.31.142',
+        'dhcp_range_end': '10.9.31.149',
+        'dns_primary': '10.9.10.1',
+        'dns_secondary': '10.20.4.1',
+        'domain_name': 'pluribusnetworks.com',
+        'gateway': '10.9.9.1',
+        'broadcast_address': '10.9.255.255',
+    },
+    'OnieInstaller': {
+        'onie_version': '2.6.1-2060112059',
+    },
+    'DhcpClient': [
+    ],
 }
 
 class PnCloud:
@@ -228,13 +252,31 @@ class DhcpSubnet(db.Model):
 
     @property
     def server_port(self):
-        return int(os.environ.get('HTTP_PORT', '0'))
+        return int(os.environ.get('HTTP_PORT', '5000'))
+
+    @property
+    def onie_url(self):
+        if self.default_url:
+            return self.default_url
+        return "http://{0}:{1}/images/onie-installer".format(self.server_ip.ip, self.server_port)
 
 class OnieInstaller(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     onie_version = db.Column(db.String(40), nullable=True)
     username = db.Column(db.String(40), nullable=True)
     password = db.Column(db.String(40), nullable=True)
+
+    @classmethod
+    def get(klass):
+        inst = klass.query.all()
+        if inst:
+            return inst[0]
+        return None
+
+class AnsibleConfig(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ssh_user = db.Column(db.String(40), nullable=True)
+    ssh_pass = db.Column(db.String(40), nullable=True)
 
     @classmethod
     def get(klass):
@@ -252,8 +294,9 @@ def show_entries():
     server = DhcpSubnet.get()
     clients = DhcpClient.query.all()
     onie = OnieInstaller.get()
+    ansible = AnsibleConfig.get()
     return render_template('show_entries.html', server=server,
-            entries=clients, onie=onie)
+            entries=clients, onie=onie, ansible=ansible)
 
 @application.route('/confsubnet', methods=['POST'])
 def configure_subnet():
@@ -303,6 +346,22 @@ def configure_onie():
 
     db.session.commit()
     flash('ONIE details updated')
+    return redirect(url_for('show_entries'))
+
+@application.route('/ansible', methods=['POST'])
+def configure_ansible():
+    entry = AnsibleConfig.get()
+    if entry:
+        for p in ['ssh_user', 'ssh_pass']:
+            if request.form[p]:
+                setattr(entry, p, request.form[p])
+    else:
+        entry = AnsibleConfig(ssh_user=request.form['ssh_user'],
+                              ssh_pass=request.form['ssh_pass'])
+        db.session.add(entry)
+
+    db.session.commit()
+    flash('Ansible config updated')
     return redirect(url_for('show_entries'))
 
 @application.route('/add', methods=['POST'])
@@ -371,12 +430,38 @@ def upload_licences():
             flash("Failed to upload licences")
             return redirect(url_for('show_entries'))
 
-        licence_10g.save(LICENCE_PATH_10G)
-        licence_40g.save(LICENCE_PATH_40G)
+        licence_10g.save(ACTIVATION_KEY_FILES[DEVICE_TYPE_10G])
+        licence_40g.save(ACTIVATION_KEY_FILES[DEVICE_TYPE_40G])
         flash("Licenses uploaded")
         return redirect(url_for('show_entries'))
     else:
         return render_template("upload_licenses.html")
+
+def generate_dhcpd_conf():
+    server = DhcpSubnet.get()
+    clients = DhcpClient.query.all()
+    return render_template("dhcpd.conf", server=server, clients=clients)
+
+def generate_ansible_hosts_file():
+    clients = DhcpClient.query.all()
+    if not clients:
+        return ''
+
+    ansible = AnsibleConfig.get()
+    tags = {}
+    for client in clients:
+        if client.hostname:
+            c = client.hostname
+        else:
+            c = client.ip
+        if not client.tag:
+            print("Host has not tag: {0}; ignoring it".format(c))
+            continue
+        if client.tag not in tags:
+            tags[client.tag] = []
+        tags[client.tag].append(client)
+
+    return render_template("ansible_hosts.txt", ansible=ansible, tags=tags)
 
 def launch_online():
     pnc = PnCloud.get()
@@ -408,16 +493,60 @@ def launch_online():
         activation = pnc.activate(device)
 
 def launch_offline():
-    server = DhcpSubnet.query.all()
+    server = DhcpSubnet.get()
     if server:
-        server = server[0]
-    print(server.server_ip)
+        print(server.server_ip)
+
+def write_dhcpd_conf():
+    dhcpd_conf = generate_dhcpd_conf()
+    if not dhcpd_conf:
+        return False
+    with open(DHCPD_CONFIG, 'w') as f:
+        f.write(dhcpd_conf)
+    print("Wrote {0}".format(DHCPD_CONFIG))
+    return True
+
+def supervisor(action, process):
+    try:
+        return (subprocess.call([SUPERVISOR, action, process]) == 0)
+    except FileNotFoundError:
+        print("Executable not found: {0}".format(SUPERVISOR))
+        return False
+
+def restart_dhcpd():
+    supervisor('stop', DHCPD_PROC)
+    if not supervisor('start', DHCPD_PROC):
+        print("Failed to start dhcpd")
+        return False
+    return True
 
 @application.route('/launch', methods=['GET'])
 def launch():
     launch_offline()
+
+    if not write_dhcpd_conf():
+        flash('Failed to write DHCHD config file')
+        return redirect(url_for('show_entries'))
+
+    if not restart_dhcpd():
+        flash("Failed to start the DHCP service")
+        return redirect(url_for('show_entries'))
+
     flash('DHCP/ONIE server launched')
     return redirect(url_for('show_entries'))
+
+@application.route('/ansiblehosts', methods=['GET'])
+def ansible_hosts():
+    hosts = generate_ansible_hosts_file()
+    if not hosts:
+        flash("Faled to generate Ansible hosts file")
+        return redirect(url_for('show_entries'))
+
+    return Response(
+            hosts,
+            mimetype='text/plain',
+            headers={"Content-disposition":
+                     "attachment; filename=hosts"})
 
 if __name__ == "__main__":
     application.run(host='0.0.0.0')
