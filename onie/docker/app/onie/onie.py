@@ -493,11 +493,6 @@ def launch_online():
                 "device_ids": client.device_id}
         activation = pnc.activate(device)
 
-def launch_offline():
-    server = DhcpSubnet.get()
-    if server:
-        print(server.server_ip)
-
 def write_dhcpd_conf():
     dhcpd_conf = generate_dhcpd_conf()
     if not dhcpd_conf:
@@ -523,7 +518,24 @@ def restart_dhcpd():
 
 @application.route('/launch', methods=['GET'])
 def launch():
-    launch_offline()
+    onie = OnieInstaller.get()
+    offline_install = True
+
+    if not os.path.isfile(ONIE_INSTALLER_PATH):
+        print("ONIE installer not available locally")
+        if not onie or not onie.onie_version:
+            flash("ONIE version not specified")
+            return redirect(url_for('show_entries'))
+        offline_install = False
+
+    for f in ACTIVATION_KEY_FILES.values():
+        if not os.path.isfile(f):
+            print("Activation key not found: {0}".format(f))
+            offline_install = False
+
+    if not offline_install:
+        print("Online setup")
+        raise Exception("Onine ONIE setup not implemented yet") # XXX: FIXME
 
     if not write_dhcpd_conf():
         flash('Failed to write DHCHD config file')

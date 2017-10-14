@@ -74,7 +74,5 @@
   <a href="/images">Download installers and activation keys</a><br/>
   <a href="{{ url_for('upload_onie') }}">Upload ONIE Installer</a><br/>
   <a href="{{ url_for('upload_licences') }}">Upload Licences</a><br/>
-  {% if onie.username and onie.password and onie.onie_version %}
-  <a href="/launch">Launch Server</a><br/>
-  {% endif %}
+  <a href="/launch">Launch DHCP Server</a><br/>
 {% endblock %}
