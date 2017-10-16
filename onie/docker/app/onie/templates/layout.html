@@ -1,6 +1,11 @@
 <!doctype html>
+<html>
+<head>
 <title>ONIE</title>
 <link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
+{% block javascript %}{% endblock %}
+</head>
+<body>
 <div class=page>
   <h1>ONIE</h1>
   <em>&copy; 2017 Pluribus Networks Inc.</em>
@@ -11,3 +16,5 @@
   {% endfor %}
   {% block body %}{% endblock %}
 </div>
+</body>
+</html>

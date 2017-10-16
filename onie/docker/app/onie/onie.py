@@ -293,9 +293,10 @@ class AnsibleConfig(db.Model):
 @application.route('/')
 def show_entries():
     server = DhcpSubnet.get()
-    clients = DhcpClient.query.all()
+    clients = DhcpClient.query.order_by(DhcpClient.hostname).all()
     onie = OnieInstaller.get()
     ansible = AnsibleConfig.get()
+    services = service_status(('dhcpd', 'nginx'))
     return render_template('show_entries.html', server=server,
             entries=clients, onie=onie, ansible=ansible)
 
@@ -370,7 +371,6 @@ def add_entry():
     entry = DhcpClient(hostname=request.form['hostname'],
                        ip=request.form['ip'],
                        mac=request.form['mac'],
-                       tag=request.form['tag'],
                        device_id=request.form['device_id'],
                        device_type=request.form['device_type'])
     db.session.add(entry)
@@ -544,6 +544,27 @@ def write_dhcpd_conf():
     print("Wrote {0}".format(DHCPD_CONFIG))
     return True
 
+def service_status(servicelist=()):
+    p = None
+    try:
+        p = subprocess.Popen([SUPERVISOR, 'status'], stdout=subprocess.PIPE)
+    except FileNotFoundError:
+        print("Executable not found: {0}".format(SUPERVISOR))
+        return []
+
+    (stdout, stderr) = p.communicate()
+    services = []
+    for line in stdout.splitlines():
+        (service, status, details) = line.decode('ascii').split(None, 2)
+        if servicelist and service not in servicelist:
+            continue
+        services.append({
+            'service': service,
+            'status': status,
+            'details': details
+        })
+    return services
+
 def supervisor(action, process):
     try:
         return (subprocess.call([SUPERVISOR, action, process]) == 0)
@@ -590,7 +611,32 @@ def launch():
     flash('DHCP/ONIE server launched')
     return redirect(url_for('show_entries'))
 
-@application.route('/ansiblehosts', methods=['GET', 'POST'])
+@application.route('/ansible_do', methods=['GET', 'POST'])
+def ansible():
+    if request.method == 'GET':
+        argsrc = request.args
+    else:
+        argsrc = request.form
+    if 'save-tags' in argsrc:
+        return ansible_tags()
+    else:
+        return ansible_hosts()
+
+def ansible_tags():
+    tags = {}
+    for p in request.form:
+        if not p.startswith('tag-'):
+            continue
+        (x, hostname) = p.split('-', 1)
+        h = DhcpClient.query.filter_by(hostname=hostname).first()
+        if h:
+            print("Updating Ansible host tag for {0}".format(hostname))
+            h.tag = request.form[p]
+
+    db.session.commit()
+    flash("Updated Ansible host tags")
+    return redirect(url_for('show_entries'))
+
 def ansible_hosts():
     if request.method == 'GET':
         argsrc = request.args

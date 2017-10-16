@@ -1,5 +1,46 @@
 {% extends "layout.html" %}
+{% block javascript %}
+<script>
+function openTab(evt, tabName) {
+    // Declare all variables
+    var i, tabcontent, tablinks;
+
+    // Get all elements with class="tabcontent" and hide them
+    tabcontent = document.getElementsByClassName("tabcontent");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }
+
+    // Get all elements with class="tablinks" and remove the class "active"
+    tablinks = document.getElementsByClassName("tablinks");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+
+    // Show the current tab, and add an "active" class to the link that opened the tab
+    document.getElementById(tabName).style.display = "block";
+    evt.currentTarget.className += " active";
+}
+
+function showSaveButton() {
+  document.getElementById('save-button').style.display = "block";
+  document.getElementById('hosts-button').style.display = "none";
+}
+
+window.onload = function(e) {
+  openTab(e, 'DHCP');
+  document.getElementById('defaultbutton').className += " active";
+};
+</script>
+{% endblock %}
 {% block body %}
+<div class="tab">
+  <button class="tablinks" onclick="openTab(event, 'PN Cloud')">PN Cloud</button>
+  <button id='defaultbutton' class="tablinks" onclick="openTab(event, 'DHCP')">DHCP</button>
+  <button class="tablinks" onclick="openTab(event, 'Ansible')">Ansible</button>
+</div>
+
+<div id="PN Cloud" class="tabcontent">
     <h3>Configure ONIE Details</h3>
     <p/>
     <form action="{{ url_for('configure_onie') }}" method=post class="add-entry">
@@ -10,6 +51,13 @@
         <tr><td/><td><input type="submit" value="Set"/></td></tr>
       </table>
     </form>
+    <p/><hr/>
+    <a href="/images">Download installers and activation keys</a><br/>
+    <a href="{{ url_for('upload_onie') }}">Upload ONIE Installer</a><br/>
+    <a href="{{ url_for('upload_licences') }}">Upload Licences</a><br/>
+</div>
+
+<div id="Ansible" class="tabcontent">
     <h3>Configure Ansible</h3>
     <p/>
     <form action="{{ url_for('configure_ansible') }}" method=post class="add-entry">
@@ -19,6 +67,29 @@
         <tr><td/><td><input type="submit" value="Set"/></td></tr>
       </table>
     </form>
+
+  <hr/>
+  <ul class=entries>
+  <form action="{{url_for('ansible') }}" method="post">
+  <table class="paddedcells">
+    <tr><th/><th>Hostname</th><th>IP</th><th>Leaf</th><th>Spline</th><td/></tr>
+  {% for entry in entries %}
+    <tr><td><input type="checkbox" name="switch" value="{{ entry.hostname }}"/></td>
+        <td>{{ entry.hostname }}</td>
+        <td>{{ entry.ip }}</td>
+        <td><input type="radio" name="tag-{{ entry.hostname }}" value="leaf" onclick="showSaveButton(this);"{% if entry.tag == "leaf" %} checked{% endif %}></td>
+        <td><input type="radio" name="tag-{{ entry.hostname }}" value="spine" onclick="showSaveButton(this);"{% if entry.tag == "spine" %} checked{% endif %}></td>
+        <td><a href="{{ url_for('remove_entry', entry_id=entry.id) }}">remove</a></td>
+    </tr>
+  {% endfor %}
+  {% if entries %}
+    <tr><td colspan="8" align="left"><input id="save-button" style="display: none;" type="submit" name="save-tags" value="Save Tag Changes"/></td></tr>
+    <tr><td colspan="8" align="left"><input id="hosts-button" style="display: block;" type="submit" name="gen-hosts" value="Generate Ansible Hosts File for Selected Switches"/></td></tr>
+  {% endif %}
+  </table>
+</div>
+
+<div id="DHCP" class="tabcontent">
     <h3>Configure the DHCP subnet</h3>
     <form action="{{ url_for('configure_subnet') }}" method=post class="add-entry">
       <table>
@@ -44,7 +115,6 @@
         <tr><th>Hostname:</th><td><input type="text" size="40" name="hostname" placeholder="switch1"/></td></tr>
         <tr><th>IP:</th><td><input type="text" size="40" name="ip" placeholder="10.9.31.214"/></td></tr>
         <tr><th>MAC:</th><td><input type="text" size="40" name="mac" placeholder="8C:EA:1B:36:FF:FF"/></td></tr>
-        <tr><th>Tag:</th><td><input type="text" size="40" name="tag" placeholder="spine"/></td></tr>
         <tr><th>Device ID:</th><td><input type="text" size="40" name="device_id" placeholder="638064ffffff"/></td></tr>
         <tr><th>Device Type:</th><td><input type="text" size="40" name="device_type" placeholder="40g"/></td></tr>
         <tr><td/><td><input type="submit" value="Add"/></td></tr>
@@ -53,30 +123,23 @@
       </table>
     </form>
 
+  <hr/>
   <ul class=entries>
-  <form action="{{url_for('ansible_hosts') }}" method="post">
   <table class="paddedcells">
-    <tr><th/><th>Hostname</th><th>IP</th><th>MAC</th><th>Tag</th><th>Device ID</th><th>Device Type</th><td/></tr>
+    <tr><th>Hostname</th><th>IP</th><th>MAC</th><th>Device ID</th><th>Device Type</th><td/></tr>
   {% for entry in entries %}
-    <tr><td><input type="checkbox" name="switch" value="{{ entry.hostname }}"/></td>
+    <tr>
         <td>{{ entry.hostname }}</td>
         <td>{{ entry.ip }}</td>
         <td>{{ entry.mac }}</td>
-        <td>{{ entry.tag }}</td>
         <td>{{ entry.device_id }}</td>
         <td>{{ entry.device_type }}</td>
         <td><a href="{{ url_for('remove_entry', entry_id=entry.id) }}">remove</a></td>
     </tr>
   {% endfor %}
-  {% if entries %}
-    <tr><td colspan="8" align="left"><input type="submit" value="Generate Ansible Hosts File for Selected Switches"/></td></tr>
-  {% endif %}
   </table>
-  </form>
   <p/>
   <hr/>
-  <a href="/images">Download installers and activation keys</a><br/>
-  <a href="{{ url_for('upload_onie') }}">Upload ONIE Installer</a><br/>
-  <a href="{{ url_for('upload_licences') }}">Upload Licences</a><br/>
   <a href="/launch">Launch DHCP Server</a><br/>
+</div>
 {% endblock %}
