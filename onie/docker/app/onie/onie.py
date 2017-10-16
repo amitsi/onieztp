@@ -458,7 +458,7 @@ def import_csv():
             text = hosts_csv.read().decode('ascii')
             lines = text.split("\n")
             reader = csv.DictReader(lines, delimiter=",",
-                        fieldnames=("mac", "ip", "hostname", "tag", "device_id", "device_type"))
+                        fieldnames=("mac", "ip", "hostname", "device_id", "device_type"))
         except:
             flash("Failed to import CSV file")
             return redirect(url_for('show_entries', _anchor='dhcp'))
