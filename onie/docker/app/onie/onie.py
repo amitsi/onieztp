@@ -5,6 +5,7 @@ import os
 import re
 import requests
 import subprocess
+from sqlalchemy import exc
 import sqlite3
 from flask import Flask, Response, request, session, g, redirect, url_for, abort, \
      render_template, flash
@@ -55,6 +56,8 @@ ACTIVATION_KEY_FILES = {
     DEVICE_TYPE_10G: os.path.join(WWW_ROOT, 'license_10g/onvl-activation-keys'),
     DEVICE_TYPE_40G: os.path.join(WWW_ROOT, 'license_40g/onvl-activation-keys'),
 }
+
+EX_CSV_IMPORT_DUP_RE = re.compile(r"UNIQUE constraint failed.*\[parameters: \('([^']+)'")
 
 SUPERVISOR = 'supervisorctl'
 DHCPD_PROC = 'dhcpd'
@@ -469,20 +472,34 @@ def import_csv():
             text = hosts_csv.read().decode('ascii')
             lines = text.split("\n")
             reader = csv.DictReader(lines, delimiter=",",
-                        fieldnames=("mac", "ip", "hostname", "device_id", "device_type"))
-        except:
-            flash("Failed to import CSV file")
+                        fieldnames=("mac", "ip", "hostname", "device_id", "device_type", "default_url"))
+        except Exception as e:
+            print(e)
+            flash("Failed to load CSV file")
             return redirect(url_for('show_entries', _anchor='dhcp'))
 
-        for row in reader:
-            entry = DhcpClient(**row)
-            db.session.add(entry)
+        try:
+            for row in reader:
+                entry = DhcpClient(**row)
+                db.session.add(entry)
+        except Exception as e:
+            print(e)
+            flash("Error importing CSV: hostname={0}".format(row['hostname']))
+            return redirect(url_for('show_entries', _anchor='dhcp'))
 
         try:
             db.session.commit()
+        except exc.IntegrityError as e:
+            print(e)
+            err = "DB integrity error"
+            m = EX_CSV_IMPORT_DUP_RE.search(str(e))
+            if m:
+                err = "Duplicate entry in record for host: '{0}'".format(m.group(1))
+            flash("Error importing CSV: " + err)
+            return redirect(url_for('show_entries', _anchor='dhcp'))
         except Exception as e:
             print(e)
-            flash("Error importing CSV")
+            flash("Error importing CSV: {0}".format(type(e)))
             return redirect(url_for('show_entries', _anchor='dhcp'))
 
         flash("CSV file imported")
