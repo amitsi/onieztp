@@ -48,6 +48,8 @@
         <tr><th>Device ID:</th><td><input type="text" size="40" name="device_id" placeholder="638064ffffff"/></td></tr>
         <tr><th>Device Type:</th><td><input type="text" size="40" name="device_type" placeholder="40g"/></td></tr>
         <tr><td/><td><input type="submit" value="Add"/></td></tr>
+        <tr/>
+        <tr><td colspan="2"><small><a href="{{ url_for('import_csv') }}">Import entries from CSV file</a></small></td></tr>
       </table>
     </form>
 
@@ -57,7 +59,7 @@
     <tr><th/><th>Hostname</th><th>IP</th><th>MAC</th><th>Tag</th><th>Device ID</th><th>Device Type</th><td/></tr>
   {% for entry in entries %}
     <tr><td><input type="checkbox" name="switch" value="{{ entry.hostname }}"/></td>
-        <th>{{ entry.hostname }}</th>
+        <td>{{ entry.hostname }}</td>
         <td>{{ entry.ip }}</td>
         <td>{{ entry.mac }}</td>
         <td>{{ entry.tag }}</td>

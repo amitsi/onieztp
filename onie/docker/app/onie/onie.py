@@ -1,3 +1,4 @@
+import csv
 from netaddr import IPNetwork
 import os
 import re
@@ -436,6 +437,47 @@ def upload_licences():
         return redirect(url_for('show_entries'))
     else:
         return render_template("upload_licenses.html")
+
+@application.route('/importcsv', methods=['GET', 'POST'])
+def import_csv():
+    if request.method == 'POST':
+        if 'hosts_csv' not in request.files:
+            flash('File not provided')
+            return redirect(url_for('show_entries'))
+
+        hosts_csv = request.files['hosts_csv']
+        if hosts_csv.filename == '':
+            flash('No file selected')
+            return redirect(url_for('show_entries'))
+
+        if not hosts_csv:
+            flash("Failed to upload CSV file")
+            return redirect(url_for('show_entries'))
+
+        try:
+            text = hosts_csv.read().decode('ascii')
+            lines = text.split("\n")
+            reader = csv.DictReader(lines, delimiter=",",
+                        fieldnames=("mac", "ip", "hostname", "tag", "device_id", "device_type"))
+        except:
+            flash("Failed to import CSV file")
+            return redirect(url_for('show_entries'))
+
+        for row in reader:
+            entry = DhcpClient(**row)
+            db.session.add(entry)
+
+        try:
+            db.session.commit()
+        except Exception as e:
+            print(e)
+            flash("Error importing CSV")
+            return redirect(url_for('show_entries'))
+
+        flash("CSV file imported")
+        return redirect(url_for('show_entries'))
+    else:
+        return render_template("import_csv.html")
 
 def generate_dhcpd_conf():
     server = DhcpSubnet.get()
