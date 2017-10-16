@@ -331,7 +331,7 @@ def configure_subnet():
 
     db.session.commit()
     flash('Subnet details updated')
-    return redirect(url_for('show_entries'))
+    return redirect(url_for('show_entries', _anchor='dhcp'))
 
 @application.route('/onie', methods=['POST'])
 def configure_onie():
@@ -348,7 +348,7 @@ def configure_onie():
 
     db.session.commit()
     flash('ONIE details updated')
-    return redirect(url_for('show_entries'))
+    return redirect(url_for('show_entries', _anchor='pnc'))
 
 @application.route('/ansible', methods=['POST'])
 def configure_ansible():
@@ -364,7 +364,7 @@ def configure_ansible():
 
     db.session.commit()
     flash('Ansible config updated')
-    return redirect(url_for('show_entries'))
+    return redirect(url_for('show_entries', _anchor='ansible'))
 
 @application.route('/add', methods=['POST'])
 def add_entry():
@@ -376,7 +376,7 @@ def add_entry():
     db.session.add(entry)
     db.session.commit()
     flash('Host added')
-    return redirect(url_for('show_entries'))
+    return redirect(url_for('show_entries', _anchor='dhcp'))
 
 @application.route('/remove/<int:entry_id>', methods=['GET'])
 def remove_entry(entry_id):
@@ -388,7 +388,7 @@ def remove_entry(entry_id):
     else:
         flash("Switch does not exist")
 
-    return redirect(url_for('show_entries'))
+    return redirect(url_for('show_entries', _anchor='dhcp'))
 
 @application.route('/uploadonie', methods=['GET', 'POST'])
 def upload_onie():
@@ -396,20 +396,20 @@ def upload_onie():
         # Upload ONIE installer
         if 'onie_installer' not in request.files:
             flash('File not provided')
-            return redirect(url_for('show_entries'))
+            return redirect(url_for('show_entries', _anchor='pnc'))
 
         onie_installer = request.files['onie_installer']
         if onie_installer.filename == '':
             flash("No file selected")
-            return redirect(url_for('show_entries'))
+            return redirect(url_for('show_entries', _anchor='pnc'))
 
         if not onie_installer:
             flash("Failed to upload ONIE installer")
-            return redirect(url_for('show_entries'))
+            return redirect(url_for('show_entries', _anchor='pnc'))
 
         onie_installer.save(ONIE_INSTALLER_PATH)
         flash("ONIE installer uploaded")
-        return redirect(url_for('show_entries'))
+        return redirect(url_for('show_entries', _anchor='pnc'))
     else:
         return render_template("upload_onie.html")
 
@@ -419,22 +419,22 @@ def upload_licences():
         if '10g_license' not in request.files \
                 or '40g_license' not in request.files:
             flash("Files not provided")
-            return redirect(url_for('show_entries'))
+            return redirect(url_for('show_entries', _anchor='pnc'))
 
         licence_10g = request.files['10g_license']
         licence_40g = request.files['40g_license']
         if licence_10g.filename == '' or licence_40g.filename == '':
             flash("Licence files not selected")
-            return redirect(url_for('show_entries'))
+            return redirect(url_for('show_entries', _anchor='pnc'))
 
         if not licence_10g or not licence_40g:
             flash("Failed to upload licences")
-            return redirect(url_for('show_entries'))
+            return redirect(url_for('show_entries', _anchor='pnc'))
 
         licence_10g.save(ACTIVATION_KEY_FILES[DEVICE_TYPE_10G])
         licence_40g.save(ACTIVATION_KEY_FILES[DEVICE_TYPE_40G])
         flash("Licenses uploaded")
-        return redirect(url_for('show_entries'))
+        return redirect(url_for('show_entries', _anchor='pnc'))
     else:
         return render_template("upload_licenses.html")
 
@@ -443,16 +443,16 @@ def import_csv():
     if request.method == 'POST':
         if 'hosts_csv' not in request.files:
             flash('File not provided')
-            return redirect(url_for('show_entries'))
+            return redirect(url_for('show_entries', _anchor='dhcp'))
 
         hosts_csv = request.files['hosts_csv']
         if hosts_csv.filename == '':
             flash('No file selected')
-            return redirect(url_for('show_entries'))
+            return redirect(url_for('show_entries', _anchor='dhcp'))
 
         if not hosts_csv:
             flash("Failed to upload CSV file")
-            return redirect(url_for('show_entries'))
+            return redirect(url_for('show_entries', _anchor='dhcp'))
 
         try:
             text = hosts_csv.read().decode('ascii')
@@ -461,7 +461,7 @@ def import_csv():
                         fieldnames=("mac", "ip", "hostname", "tag", "device_id", "device_type"))
         except:
             flash("Failed to import CSV file")
-            return redirect(url_for('show_entries'))
+            return redirect(url_for('show_entries', _anchor='dhcp'))
 
         for row in reader:
             entry = DhcpClient(**row)
@@ -472,10 +472,10 @@ def import_csv():
         except Exception as e:
             print(e)
             flash("Error importing CSV")
-            return redirect(url_for('show_entries'))
+            return redirect(url_for('show_entries', _anchor='dhcp'))
 
         flash("CSV file imported")
-        return redirect(url_for('show_entries'))
+        return redirect(url_for('show_entries', _anchor='dhcp'))
     else:
         return render_template("import_csv.html")
 
@@ -588,7 +588,7 @@ def launch():
         print("ONIE installer not available locally")
         if not onie or not onie.onie_version:
             flash("ONIE version not specified")
-            return redirect(url_for('show_entries'))
+            return redirect(url_for('show_entries', _anchor='dhcp'))
         offline_install = False
 
     for f in ACTIVATION_KEY_FILES.values():
@@ -602,14 +602,14 @@ def launch():
 
     if not write_dhcpd_conf():
         flash('Failed to write DHCHD config file')
-        return redirect(url_for('show_entries'))
+        return redirect(url_for('show_entries', _anchor='dhcp'))
 
     if not restart_dhcpd():
         flash("Failed to start the DHCP service")
-        return redirect(url_for('show_entries'))
+        return redirect(url_for('show_entries', _anchor='dhcp'))
 
     flash('DHCP/ONIE server launched')
-    return redirect(url_for('show_entries'))
+    return redirect(url_for('show_entries', _anchor='dhcp'))
 
 @application.route('/ansible_do', methods=['GET', 'POST'])
 def ansible():
@@ -635,7 +635,7 @@ def ansible_tags():
 
     db.session.commit()
     flash("Updated Ansible host tags")
-    return redirect(url_for('show_entries'))
+    return redirect(url_for('show_entries', _anchor='ansible'))
 
 def ansible_hosts():
     if request.method == 'GET':
@@ -645,13 +645,13 @@ def ansible_hosts():
     switches = argsrc.getlist('switch')
     if not switches:
         flash("No switches selected")
-        return redirect(url_for('show_entries'))
+        return redirect(url_for('show_entries', _anchor='ansible'))
 
     print("Generating Ansible hosts file for: {0}".format(switches))
     hosts = generate_ansible_hosts_file(switches)
     if not hosts:
         flash("Faled to generate Ansible hosts file")
-        return redirect(url_for('show_entries'))
+        return redirect(url_for('show_entries', _anchor='ansible'))
 
     return Response(
             hosts,

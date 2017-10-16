@@ -19,7 +19,11 @@ function openTab(evt, tabName) {
 
     // Show the current tab, and add an "active" class to the link that opened the tab
     document.getElementById(tabName).style.display = "block";
-    evt.currentTarget.className += " active";
+    if (evt) {
+        if (evt.currentTarget) {
+            evt.currentTarget.className += " active";
+        }
+    }
 }
 
 function showSaveButton() {
@@ -27,20 +31,36 @@ function showSaveButton() {
   document.getElementById('hosts-button').style.display = "none";
 }
 
+function setDefaultTab(name) {
+    var button = "button-".concat(name);
+    var tab = "tab-".concat(name);
+    openTab(this, tab);
+    document.getElementById(button).className += " active";
+}
+
 window.onload = function(e) {
-  openTab(e, 'DHCP');
-  document.getElementById('defaultbutton').className += " active";
+  hash = window.location.hash.substr(1);
+  switch (hash) {
+      case 'ansible':
+      case 'pnc':
+      case 'dhcp':
+          setDefaultTab(hash);
+          break;
+      default:
+          setDefaultTab('dhcp');
+          break;
+  }
 };
 </script>
 {% endblock %}
 {% block body %}
 <div class="tab">
-  <button class="tablinks" onclick="openTab(event, 'PN Cloud')">PN Cloud</button>
-  <button id='defaultbutton' class="tablinks" onclick="openTab(event, 'DHCP')">DHCP</button>
-  <button class="tablinks" onclick="openTab(event, 'Ansible')">Ansible</button>
+  <button id='button-pnc' class="tablinks" onclick="openTab(event, 'tab-pnc')">PN Cloud</button>
+  <button id='button-dhcp' class="tablinks" onclick="openTab(event, 'tab-dhcp')">DHCP</button>
+  <button id='button-ansible' class="tablinks" onclick="openTab(event, 'tab-ansible')">Ansible</button>
 </div>
 
-<div id="PN Cloud" class="tabcontent">
+<div id="tab-pnc" class="tabcontent">
     <h3>Configure ONIE Details</h3>
     <p/>
     <form action="{{ url_for('configure_onie') }}" method=post class="add-entry">
@@ -57,7 +77,7 @@ window.onload = function(e) {
     <a href="{{ url_for('upload_licences') }}">Upload Licences</a><br/>
 </div>
 
-<div id="Ansible" class="tabcontent">
+<div id="tab-ansible" class="tabcontent">
     <h3>Configure Ansible</h3>
     <p/>
     <form action="{{ url_for('configure_ansible') }}" method=post class="add-entry">
@@ -89,7 +109,7 @@ window.onload = function(e) {
   </table>
 </div>
 
-<div id="DHCP" class="tabcontent">
+<div id="tab-dhcp" class="tabcontent">
     <h3>Configure the DHCP subnet</h3>
     <form action="{{ url_for('configure_subnet') }}" method=post class="add-entry">
       <table>
