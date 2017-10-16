@@ -1,4 +1,5 @@
 import csv
+import datetime
 from netaddr import IPNetwork
 import os
 import re
@@ -42,6 +43,7 @@ WWW_ROOT = '/var/www/html/images'
 ONIE_INSTALLER_PATH = os.path.join(WWW_ROOT, 'onie-installer')
 LICENCE_PATH_10G = os.path.join(WWW_ROOT, 'license_10g/onvl-activation-keys')
 LICENCE_PATH_40G = os.path.join(WWW_ROOT, 'license_40g/onvl-activation-keys')
+ANSIBLE_HOSTS_LIST = os.path.join(WWW_ROOT, 'ansible_hosts')
 
 DEVICE_TYPE_10G = '10g'
 DEVICE_TYPE_40G = '40g'
@@ -286,6 +288,12 @@ class AnsibleConfig(db.Model):
             return inst[0]
         return None
 
+class AnsibleHostsFile(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), nullable=True)
+    filename = db.Column(db.String(25))
+    hosts = db.Column(db.Text())
+
 #
 # VIEWS
 #
@@ -296,9 +304,10 @@ def show_entries():
     clients = DhcpClient.query.order_by(DhcpClient.hostname).all()
     onie = OnieInstaller.get()
     ansible = AnsibleConfig.get()
+    hostfiles = AnsibleHostsFile.query.order_by(AnsibleHostsFile.filename.desc()).all()
     services = service_status(('dhcpd', 'nginx'))
     return render_template('show_entries.html', server=server,
-            entries=clients, onie=onie, ansible=ansible)
+            entries=clients, onie=onie, ansible=ansible, hostfiles=hostfiles)
 
 @application.route('/confsubnet', methods=['POST'])
 def configure_subnet():
@@ -652,6 +661,16 @@ def ansible_hosts():
     if not hosts:
         flash("Faled to generate Ansible hosts file")
         return redirect(url_for('show_entries', _anchor='ansible'))
+
+    filename = '{:%Y-%m-%d-%H%M%S}.txt'.format(datetime.datetime.now())
+    hostsfile = os.path.join(ANSIBLE_HOSTS_LIST, filename)
+    with open(hostsfile, 'w') as f:
+        f.write(hosts)
+
+    switchlist = ', '.join(sorted(switches))
+    entry = AnsibleHostsFile(filename=filename, hosts=switchlist)
+    db.session.add(entry)
+    db.session.commit()
 
     return Response(
             hosts,

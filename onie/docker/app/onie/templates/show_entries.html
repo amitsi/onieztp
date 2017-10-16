@@ -107,6 +107,16 @@ window.onload = function(e) {
     <tr><td colspan="8" align="left"><input id="hosts-button" style="display: block;" type="submit" name="gen-hosts" value="Generate Ansible Hosts File for Selected Switches"/></td></tr>
   {% endif %}
   </table>
+
+  {% if hostfiles %}
+  <hr/>
+  <h3>Generated Hostfiles</h3>
+  <ul>
+      {% for hostfile in hostfiles %}
+      <li><a href="/images/ansible_hosts/{{ hostfile.filename }}" title="Hosts: {{ hostfile.hosts }}">{{ hostfile.filename }}</a></li>
+      {% endfor %}
+  </ul>
+  {% endif %}
 </div>
 
 <div id="tab-dhcp" class="tabcontent">
