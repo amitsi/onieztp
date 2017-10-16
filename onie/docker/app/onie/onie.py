@@ -196,6 +196,7 @@ class DhcpClient(db.Model):
     tag = db.Column(db.String(20), nullable=True)
     device_id = db.Column(db.String(40), unique=True, nullable=True)
     device_type = db.Column(db.String(20), nullable=False)
+    default_url = db.Column(db.String(256), nullable=True)
 
     server_id = db.Column(db.Integer, db.ForeignKey('dhcp_subnet.id'))
 
@@ -381,7 +382,8 @@ def add_entry():
                        ip=request.form['ip'],
                        mac=request.form['mac'],
                        device_id=request.form['device_id'],
-                       device_type=request.form['device_type'])
+                       device_type=request.form['device_type'],
+                       default_url=request.form['default_url'])
     db.session.add(entry)
     db.session.commit()
     flash('Host added')

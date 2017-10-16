@@ -148,6 +148,7 @@ window.onload = function(e) {
         <tr><th>MAC:</th><td><input type="text" size="40" name="mac" placeholder="8C:EA:1B:36:FF:FF"/></td></tr>
         <tr><th>Device ID:</th><td><input type="text" size="40" name="device_id" placeholder="638064ffffff"/></td></tr>
         <tr><th>Device Type:</th><td><input type="text" size="40" name="device_type" placeholder="40g"/></td></tr>
+        <tr><th>Default URL:</th><td><input type="text" size="40" name="device_url" placeholder="http://{% if server.server_ip %}{{ server.server_ip.ip }}{% else %}10.9.10.127{% endif %}:{{ server.server_port or '4000' }}/images/onie-installer"/></td></tr>
         <tr><td/><td><input type="submit" value="Add"/></td></tr>
         <tr/>
         <tr><td colspan="2"><small><a href="{{ url_for('import_csv') }}">Import entries from CSV file</a></small></td></tr>
@@ -157,7 +158,7 @@ window.onload = function(e) {
   <hr/>
   <ul class=entries>
   <table class="paddedcells">
-    <tr><th>Hostname</th><th>IP</th><th>MAC</th><th>Device ID</th><th>Device Type</th><td/></tr>
+  <tr><th>Hostname</th><th>IP</th><th>MAC</th><th>Device ID</th><th>Device Type</th><th>Default URL</th><td/></tr>
   {% for entry in entries %}
     <tr>
         <td>{{ entry.hostname }}</td>
@@ -165,6 +166,7 @@ window.onload = function(e) {
         <td>{{ entry.mac }}</td>
         <td>{{ entry.device_id }}</td>
         <td>{{ entry.device_type }}</td>
+        <td>{{ entry.default_url }}</td>
         <td><a href="{{ url_for('remove_entry', entry_id=entry.id) }}">remove</a></td>
     </tr>
   {% endfor %}
