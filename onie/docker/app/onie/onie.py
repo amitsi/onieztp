@@ -381,14 +381,20 @@ def configure_ansible():
 
 @application.route('/add', methods=['POST'])
 def add_entry():
-    entry = DhcpClient(hostname=request.form['hostname'],
-                       ip=request.form['ip'],
-                       mac=request.form['mac'],
-                       device_id=request.form['device_id'],
-                       device_type=request.form['device_type'],
-                       default_url=request.form['default_url'])
-    db.session.add(entry)
-    db.session.commit()
+    try:
+        entry = DhcpClient(hostname=request.form['hostname'],
+                           ip=request.form['ip'],
+                           mac=request.form['mac'],
+                           device_id=request.form['device_id'],
+                           device_type=request.form['device_type'],
+                           default_url=request.form['default_url'])
+        db.session.add(entry)
+        db.session.commit()
+    except Exception as e:
+        print(str(e))
+        flash("Error adding DHCP host")
+        return redirect(url_for('show_entries', _anchor='dhcp'))
+
     flash('Host added')
     return redirect(url_for('show_entries', _anchor='dhcp'))
 
