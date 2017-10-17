@@ -1,5 +1,6 @@
 import csv
 import datetime
+import glob
 from netaddr import IPNetwork
 import os
 import re
@@ -420,6 +421,12 @@ def show_entries():
     activation_keys = {}
     activations_by_device_id = {}
 
+    onie_installers = [os.path.basename(x) for x in glob.glob(os.path.join(WWW_ROOT, 'onie-installer-*'))]
+    if os.path.islink(ONIE_INSTALLER_PATH):
+        current = os.path.basename(os.readlink(ONIE_INSTALLER_PATH))
+    else:
+        current = ''
+
     pnc = PnCloud.get()
     if pnc.login():
         assets = pnc.assets()
@@ -437,7 +444,8 @@ def show_entries():
     return render_template('show_entries.html', server=server,
             entries=clients, onie=onie, ansible=ansible, hostfiles=hostfiles,
             assets=assets, products=products, activation_keys=activation_keys,
-            activations_by_device_id=activations_by_device_id)
+            activations_by_device_id=activations_by_device_id, onie_installers=onie_installers,
+            current=current)
 
 @application.route('/confsubnet', methods=['POST'])
 def configure_subnet():
@@ -583,11 +591,20 @@ def upload_onie():
             flash("No file selected")
             return redirect(url_for('show_entries', _anchor='pnc'))
 
+        if not onie_installer.filename.startswith('onie-installer-'):
+            flash("Not an ONIE installer: {0}".format(onie_installer.filename))
+            return redirect(url_for('show_entries', _anchor='pnc'))
+
         if not onie_installer:
             flash("Failed to upload ONIE installer")
             return redirect(url_for('show_entries', _anchor='pnc'))
 
-        onie_installer.save(ONIE_INSTALLER_PATH)
+        onie_installer_filename = os.path.basename(onie_installer.filename)
+        onie_installer_path = os.path.join(WWW_ROOT, onie_installer_filename)
+        print("Uploading ONIE installer to path: {0}".format(onie_installer_path))
+        onie_installer.save(onie_installer_path)
+        set_default_onie_symlink(onie_installer_filename)
+
         flash("ONIE installer uploaded")
         return redirect(url_for('show_entries', _anchor='pnc'))
     else:
@@ -809,7 +826,44 @@ def download_onie(installer):
         flash("Downloaded installer: {0}".format(installer))
     else:
         flash("Error downloading ONIE installer: {0}".format(installer))
+
+    set_default_onie_symlink(installer)
     return redirect(url_for('show_entries', _anchor='pnc'))
+
+def set_default_onie_symlink(installer):
+    definst = os.path.join(WWW_ROOT, installer)
+    symlink = os.path.join(WWW_ROOT, 'onie-installer')
+
+    try:
+        if os.path.isfile(definst):
+            if os.path.islink(symlink):
+                os.remove(symlink)
+            os.symlink(os.path.basename(definst), symlink)
+        else:
+            print("ONIE installer not found: {0}".format(installer))
+            return False
+    except Exception as e:
+        print("Failed to set up default ONIE symlink: {0}: {1}".format(installer, e))
+        return False
+
+    return True
+
+@application.route('/setdefaultonie', methods=['GET', 'POST'])
+def set_default_onie():
+    if request.method == 'POST':
+        installer = request.form['installer']
+        if set_default_onie_symlink(installer):
+            flash("Default ONIE installer: {0}".format(installer))
+        else:
+            flash("Failed to set default ONIE installer")
+        return redirect(url_for('show_entries', _anchor='pnc'))
+    else:
+        onie_installers = [os.path.basename(x) for x in glob.glob(os.path.join(WWW_ROOT, 'onie-installer-*'))]
+        if os.path.islink(ONIE_INSTALLER_PATH):
+            current = os.path.basename(os.readlink(ONIE_INSTALLER_PATH))
+        else:
+            current = ''
+        return render_template("set_default_onie.html", onie_installers=onie_installers, current=current)
 
 @application.route('/launch', methods=['GET'])
 def launch():

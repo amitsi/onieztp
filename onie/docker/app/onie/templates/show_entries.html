@@ -47,7 +47,7 @@ window.onload = function(e) {
           setDefaultTab(hash);
           break;
       default:
-          setDefaultTab('dhcp');
+          setDefaultTab('pnc');
           break;
   }
 };
@@ -80,6 +80,19 @@ window.onload = function(e) {
     <tr><td>{{ product.name }}</td><td>{{ product.version }}</td><td>{% if product.__downloaded %}<a href="/images/{{ product.sw_pid }}">available</a>{% else %}<a href="{{ url_for('download_onie', installer=product.sw_pid) }}">download from PN Cloud</a>{% endif %}</td></tr>
     {% endfor %}
     </table>
+
+    {% if current %}<br/><small>Default ONIE installer: <strong>{{ current }}</strong></small>{% endif %}<br/>
+    {% if onie_installers and onie_installers|length > 1 %}
+    <form action="{{ url_for('set_default_onie') }}" method="post">
+      <select name="installer">
+        {% for installer in onie_installers %}
+        <option value="{{ installer }}"{% if installer == current %} selected{% endif %}>{{ installer }}</option>
+        {% endfor %}
+      </select>
+      <input type="submit" value="Change Default"/>
+    </form>
+    {% endif %}
+
     <p/><hr/>
     {% endif %}
 
@@ -115,7 +128,7 @@ window.onload = function(e) {
     <p/>
     <form action="{{ url_for('configure_ansible') }}" method=post class="add-entry">
       <table>
-        <tr><th>SSH Username:</th><td><input type="text" size="40" name="ssh_user" value="{{ ansible.ssh_user }}" placeholder="pluribus"/></td></tr>
+        <tr><th>SSH Username:</th><td><input type="text" size="40" name="ssh_user" value="{{ ansible.ssh_user or 'network-admin' }}" placeholder="network-admin"/></td></tr>
         <tr><th>SSH Password:</th><td><input type="password" size="40" name="ssh_pass" placeholder="{% if ansible.ssh_pass %}password set{% endif %}"/></td></tr>
         <tr><td/><td><input type="submit" value="Set"/></td></tr>
       </table>
