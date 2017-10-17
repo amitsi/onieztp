@@ -65,7 +65,6 @@ window.onload = function(e) {
     <p/>
     <form action="{{ url_for('configure_onie') }}" method=post class="add-entry">
       <table>
-        <tr><th>ONIE Version:</th><td><input type="text" size="40" name="onie_version" value="{{ onie.onie_version }}" placeholder="2.6.1-2060112059"/></td></tr>
         <tr><th>PN Cloud Username:</th><td><input type="text" size="40" name="username" value="{{ onie.username }}" placeholder="user@example.com"/></td></tr>
         <tr><th>PN Cloud Password:</th><td><input type="password" size="40" name="password" placeholder="{% if onie.password %}password set{% endif %}"/></td></tr>
         <tr><td/><td><input type="submit" value="Set"/></td></tr>
@@ -192,7 +191,7 @@ window.onload = function(e) {
   <hr/>
   <ul class=entries>
   <table class="paddedcells">
-  <tr><th>Hostname</th><th>IP</th><th>MAC</th><th>Device ID</th><th>Device Type</th><th>Default URL</th><td/></tr>
+    <tr><th>Hostname</th><th>IP</th><th>MAC</th><th>Device ID</th><th>Type</th><th>RL</th><th>Activation</th><td/></tr>
   {% for entry in entries %}
     <tr>
         <td>{{ entry.hostname }}</td>
@@ -200,7 +199,8 @@ window.onload = function(e) {
         <td>{{ entry.mac }}</td>
         <td>{{ entry.device_id }}</td>
         <td>{{ entry.device_type }}</td>
-        <td>{{ entry.default_url }}</td>
+        <td>{% if entry.default_url %}<a href="{{ entry.default_url }}" title="{{ entry.default_url }}">custom</a>{% endif %}</td>
+        <td>{% if activations_by_device_id.get(entry.device_id) %}active{% else %}<a href="{{ url_for('activate', deviceid=entry.device_id, devicetype=entry.device_type) }}">activate</a>{% endif %}</td>
         <td><a href="{{ url_for('remove_entry', entry_id=entry.id) }}">remove</a></td>
     </tr>
   {% endfor %}

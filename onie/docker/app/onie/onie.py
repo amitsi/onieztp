@@ -227,6 +227,29 @@ class PnCloud:
         result = self._api_post(PNC_ORDER_ACTIVATION, device)
         return result
 
+    def activate_device_id(self, device_id, device_type):
+        if not self.logged_in:
+            print("Not logged in")
+            return False
+
+        det = self.order_details()
+        order_details = {
+            DEVICE_TYPE_10G: det[0],
+            DEVICE_TYPE_40G: det[1],
+        }
+        details = order_details[device_type]
+        active = [x for x in details['order_activations'] if x['device_id'] == device_id]
+        if active:
+            print("Device already active: {0}; activation date: {1}".format(
+                device_id, active[0]['activation_date']))
+            return True
+
+        print("Activating device: {0}".format(device_id))
+        order_id = order_details[device_type]['id']
+        device = {"order_detail_id": order_id,
+                "device_ids": device_id}
+        return self.activate(device)
+
     def onie_download(self, installer):
         if not self.logged_in:
             raise Exception("Not logged in")
@@ -395,6 +418,7 @@ def show_entries():
     assets = []
     products = []
     activation_keys = {}
+    activations_by_device_id = {}
 
     pnc = PnCloud.get()
     if pnc.login():
@@ -406,9 +430,14 @@ def show_entries():
             else:
                 activation_keys[dtype] = None
 
+        for det in pnc.order_details():
+            for a in det['order_activations']:
+                activations_by_device_id[a['device_id']] = True
+
     return render_template('show_entries.html', server=server,
             entries=clients, onie=onie, ansible=ansible, hostfiles=hostfiles,
-            assets=assets, products=products, activation_keys=activation_keys)
+            assets=assets, products=products, activation_keys=activation_keys,
+            activations_by_device_id=activations_by_device_id)
 
 @application.route('/confsubnet', methods=['POST'])
 def configure_subnet():
@@ -478,6 +507,7 @@ def configure_ansible():
 
 @application.route('/add', methods=['POST'])
 def add_entry():
+    msg = ''
     try:
         entry = DhcpClient(hostname=request.form['hostname'],
                            ip=request.form['ip'],
@@ -492,7 +522,41 @@ def add_entry():
         flash("Error adding DHCP host")
         return redirect(url_for('show_entries', _anchor='dhcp'))
 
-    flash('Host added')
+    msg = 'Host added'
+
+    # Activate host
+    if entry.device_id and entry.device_type:
+        try:
+            pnc = PnCloud.get()
+            pnc.login()
+            result = pnc.activate_device_id(entry.device_id, entry.device_type)
+            print(result)
+        except Exception as e:
+            print("Failed to activate host: {0}: {1}".format(entry.device_id, e))
+            msg += " but activation failed"
+        else:
+            msg += " and activated"
+
+    flash(msg)
+    return redirect(url_for('show_entries', _anchor='dhcp'))
+
+@application.route('/activate/<deviceid>,<devicetype>', methods=['GET'])
+def activate(deviceid, devicetype):
+    result = False
+    try:
+        pnc = PnCloud.get()
+        pnc.login()
+        result = pnc.activate_device_id(deviceid, devicetype)
+    except Exception as e:
+        print("Failed to activate host: {0}: {1}".format(deviceid, e))
+        flash("Failed to activate host")
+        return redirect(url_for('show_entries', _anchor='dhcp'))
+
+    if result:
+        flash("Activated host")
+    else:
+        flash("Failed to activate host")
+
     return redirect(url_for('show_entries', _anchor='dhcp'))
 
 @application.route('/remove/<int:entry_id>', methods=['GET'])
