@@ -476,17 +476,16 @@ def configure_subnet():
 def configure_onie():
     entry = OnieInstaller.get()
     if entry:
-        for p in ['onie_version', 'username', 'password']:
+        for p in ['username', 'password']:
             if request.form[p]:
                 setattr(entry, p, request.form[p])
     else:
-        entry = OnieInstaller(onie_version=request.form['onie_version'],
-                              username=request.form['username'],
+        entry = OnieInstaller(username=request.form['username'],
                               password=request.form['password'])
         db.session.add(entry)
 
     db.session.commit()
-    flash('ONIE details updated')
+    flash('PN Cloud details updated')
     return redirect(url_for('show_entries', _anchor='pnc'))
 
 @application.route('/ansible', methods=['POST'])
