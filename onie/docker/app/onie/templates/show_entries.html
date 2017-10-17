@@ -72,7 +72,41 @@ window.onload = function(e) {
       </table>
     </form>
     <p/><hr/>
-    <a href="/images">Download installers and activation keys</a><br/>
+
+    {% if products %}
+    <h3>ONIE Installers</h3>
+    <table class="thinborder">
+        <tr><th>Name</th><th>Version</th><td/></tr>
+    {% for product in products %}
+    <tr><td>{{ product.name }}</td><td>{{ product.version }}</td><td>{% if product.__downloaded %}<a href="/images/{{ product.sw_pid }}">available</a>{% else %}<a href="{{ url_for('download_onie', installer=product.sw_pid) }}">download from PN Cloud</a>{% endif %}</td></tr>
+    {% endfor %}
+    </table>
+    <p/><hr/>
+    {% endif %}
+
+    {% if activation_keys %}
+    <h3>Activation Keys</h3>
+    <table class="thinborder">
+        <tr><th>Type</th><td/></tr>
+    {% for type, activation_key in activation_keys.items() %}
+    <tr><td>{{ type }}</td><td>{% if activation_key %}<a href="{{ activation_key }}">available</a>{% else %}<a href="{{ url_for('download_activation_key', dtype=type) }}">download from PN Cloud</a>{% endif %}</td></tr>
+    {% endfor %}
+    </table>
+    </p><hr/>
+    {% endif %}
+
+    {% if assets %}
+    <h3>Assets</h3>
+    <table class="thinborder">
+        <tr><th>Hardware Model</th><th>Hostname</th><th>Device ID</th><th>IP Address</th><th>Last Connect</th></tr>
+    {% for asset in assets %}
+        <tr><td>{{ asset.hwPid }}</td><td>{{ asset.hostname }}</td><td>{{ asset.deviceId }}</td><td>{{ asset.ip }}</td><td>{{ asset.lastConnect }}</td></tr>
+    {% endfor %}
+    </table>
+    <p/><hr/>
+    {% endif %}
+
+    <a href="/images">Downloaded ONIE installers and activation keys</a><br/>
     <a href="{{ url_for('upload_onie') }}">Upload ONIE Installer</a><br/>
     <a href="{{ url_for('upload_licences') }}">Upload Licences</a><br/>
 </div>

@@ -23,7 +23,6 @@ div.tab {
     border: 1px solid #ccc;
     background-color: #f1f1f1;
     width: 15%;
-    height: 1200px;
 }
 
 /* Style the buttons inside the tab */
@@ -57,6 +56,14 @@ div.tab button.active {
     border: 1px solid #ccc;
     width: 80%;
     border-left: none;
-    height: 1200px;
     display: block;
+}
+
+table.thinborder {
+    border-collapse: collapse;
+}
+
+table.thinborder td, table.thinborder th {
+    border: 1px solid black;
+    padding: 7px;
 }

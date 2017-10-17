@@ -7,6 +7,8 @@ import requests
 import subprocess
 from sqlalchemy import exc
 import sqlite3
+import time
+
 from flask import Flask, Response, request, session, g, redirect, url_for, abort, \
      render_template, flash
 from flask_sqlalchemy import SQLAlchemy
@@ -26,7 +28,8 @@ application.config.update(dict(
     SQLALCHEMY_TRACK_MODIFICATIONS=True,
     SECRET_KEY='secret',
     USERNAME='admin',
-    PASSWORD='test123'
+    PASSWORD='test123',
+    TRAP_BAD_REQUEST_ERRORS=True,
 ))
 application.config.from_envvar('ONIE_SETTINGS', silent=True)
 db = SQLAlchemy(application)
@@ -35,10 +38,14 @@ db = SQLAlchemy(application)
 # UTILS
 #
 
+PNC_RELOGIN_INTERVAL = 300 # seconds
 PNC_LOGIN = 'https://cloud-web.pluribusnetworks.com/api/login'
 PNC_ORDER_DETAILS = 'https://cloud-web.pluribusnetworks.com/api/orderDetails'
 PNC_ORDER_ACTIVATION = 'https://cloud-web.pluribusnetworks.com/api/orderActivations'
 PNC_ACTIVATION_KEY_FOR = 'https://cloud-web.pluribusnetworks.com/api/offline_bundle/{0}'.format
+PNC_ONIE_DOWNLOAD_FOR = 'https://cloud-web.pluribusnetworks.com/api/download_image1/{0}?version={1}'.format
+PNC_ASSETS = 'https://cloud-web.pluribusnetworks.com/api/assets'
+PNC_PRODUCTS = 'https://cloud-web.pluribusnetworks.com/api/products'
 
 WWW_ROOT = '/var/www/html/images'
 ONIE_INSTALLER_PATH = os.path.join(WWW_ROOT, 'onie-installer')
@@ -88,6 +95,7 @@ class PnCloud:
     def __init__(self):
         self.session = requests.Session()
         self.logged_in = False
+        self.login_time = 0
         self.session.verify = False  # FIXME
         self.username = None
         self.full_name = None
@@ -119,7 +127,8 @@ class PnCloud:
         if r.status_code == requests.codes.ok:
             return r.json()
         else:
-            raise Exception("ERROR: {0} {1}".format(r.status_code, r.text))
+            print("Request failed: {0}: {1} {2}".format(url, r.status_code, r.text))
+            return {}
 
     def _api_post(self, url, data={}):
         if 'csrfmiddlewaretoken' not in data and 'csrftoken' in self.session.cookies:
@@ -131,17 +140,22 @@ class PnCloud:
         return self._api_request(self.session.get, url)
 
     def login(self):
+        if self.logged_in and time.time() - self.login_time > PNC_RELOGIN_INTERVAL:
+            print("Re-logging in to PN cloud")
+            self.logged_in = False
+
         if not self.logged_in:
             print("Logging in to PN cloud")
             onie = self.get_onie_details()
             if not onie:
-                print("ONIE details not configured")
+                print("PN cloud details not configured")
                 return False
 
             data = {"login_email": onie.username, "login_password": onie.password}
             resp = self._api_post(PNC_LOGIN, data)
             self.logged_in = resp.get('success', False)
             if self.logged_in:
+                self.login_time = time.time()
                 self.username = resp.get('username', '')
                 self.full_name = resp.get('full_name', '')
 
@@ -161,6 +175,42 @@ class PnCloud:
         order_det = self._api_get(PNC_ORDER_DETAILS)
         return order_det.get('order_details', [])
 
+    def assets(self):
+        if not self.logged_in:
+            print("Not logged in")
+            return False
+
+        assets = self._api_get(PNC_ASSETS)
+        return assets.get('assets', [])
+
+    def products(self, download_group_ids=(), sw_pid_pattern=None):
+        if not self.logged_in:
+            print("Not logged in")
+            return False
+
+        products = self._api_get(PNC_PRODUCTS).get('products', [])
+        if download_group_ids:
+            products = [x for x in products if x['download_group_id'] in download_group_ids]
+        if sw_pid_pattern:
+            products = [x for x in products if sw_pid_pattern.search(x['sw_pid'])]
+
+        for product in products:
+            product['__downloaded'] = os.path.isfile(os.path.join(WWW_ROOT, product['sw_pid']))
+
+        return products
+
+    def activation_key_download(self, dtype):
+        if not self.logged_in:
+            raise Exception("Not logged in")
+
+        det = self.order_details()
+        order_details = {
+            DEVICE_TYPE_10G: det[0],
+            DEVICE_TYPE_40G: det[1],
+        }
+        self.activation_key(order_details[dtype]['id'],
+                ACTIVATION_KEY_FILES[dtype])
+
     def activation_key(self, order_id, filename):
         print("Fetching activation key for order \"{0}\" into {1}".format(
             order_id, filename))
@@ -176,6 +226,38 @@ class PnCloud:
 
         result = self._api_post(PNC_ORDER_ACTIVATION, device)
         return result
+
+    def onie_download(self, installer):
+        if not self.logged_in:
+            raise Exception("Not logged in")
+
+        m = re.match(r'onie-installer-(.*)', installer)
+        if m:
+            installer_vers = m.group(1)
+        else:
+            print("Illegal ONIE installer filename: {0}".format(installer))
+            return ''
+
+        url = PNC_ONIE_DOWNLOAD_FOR(installer, installer_vers)
+        print("Downloading: {0}".format(url))
+
+        outfile = os.path.join(WWW_ROOT, installer)
+
+        r = self.session.get(url, stream=True)
+        with open(outfile, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024):
+                if chunk:
+                    f.write(chunk)
+        
+        if r.status_code != requests.codes.ok:
+            print("Failed to download ONIE installer: {0}: {1}".format(
+                url, r.status_code))
+            if os.path.isfile(outfile):
+                print("Removing file: {0}".format(outfile))
+                os.remove(outfile)
+            return ''
+
+        return outfile
 
 #
 # FLASK
@@ -310,8 +392,23 @@ def show_entries():
     ansible = AnsibleConfig.get()
     hostfiles = AnsibleHostsFile.query.order_by(AnsibleHostsFile.filename.desc()).all()
     services = service_status(('dhcpd', 'nginx'))
+    assets = []
+    products = []
+    activation_keys = {}
+
+    pnc = PnCloud.get()
+    if pnc.login():
+        assets = pnc.assets()
+        products = pnc.products(download_group_ids=(1,), sw_pid_pattern=re.compile(r'^onie-installer-'))
+        for dtype in ACTIVATION_KEY_FILES:
+            if os.path.isfile(ACTIVATION_KEY_FILES[dtype]):
+                activation_keys[dtype] = re.sub(r'^.*/images/', '/images/', ACTIVATION_KEY_FILES[dtype])
+            else:
+                activation_keys[dtype] = None
+
     return render_template('show_entries.html', server=server,
-            entries=clients, onie=onie, ansible=ansible, hostfiles=hostfiles)
+            entries=clients, onie=onie, ansible=ansible, hostfiles=hostfiles,
+            assets=assets, products=products, activation_keys=activation_keys)
 
 @application.route('/confsubnet', methods=['POST'])
 def configure_subnet():
@@ -540,7 +637,7 @@ def generate_ansible_hosts_file(switchnames):
 
     return render_template("ansible_hosts.txt", ansible=ansible, tags=tags)
 
-def launch_online():
+def fetch_online():
     pnc = PnCloud.get()
     pnc.login()
     det = pnc.order_details()
@@ -613,6 +710,44 @@ def restart_dhcpd():
         return False
     return True
 
+@application.route('/downloadkey/<dtype>', methods=['GET'])
+def download_activation_key(dtype):
+    print("Downloading activation key for type: {0}".format(type))
+    download = None
+    try:
+        pnc = PnCloud.get()
+        pnc.login()
+        download = pnc.activation_key_download(dtype)
+    except Exception as e:
+        print(e)
+        flash("Failed to download activation key")
+        return redirect(url_for('show_entries', _anchor='pnc'))
+
+    if os.path.isfile(ACTIVATION_KEY_FILES[dtype]):
+        flash("Downloaded activation key")
+    else:
+        flash("Error downloading activation key of type '{0}'".format(dtype))
+    return redirect(url_for('show_entries', _anchor='pnc'))
+
+@application.route('/downloadonie/<installer>', methods=['GET'])
+def download_onie(installer):
+    print("Downloading ONIE installer: {0}".format(installer))
+    download = None
+    try:
+        pnc = PnCloud.get()
+        pnc.login()
+        download = pnc.onie_download(installer)
+    except Exception as e:
+        print(e)
+        flash("Failed to download ONIE installer")
+        return redirect(url_for('show_entries', _anchor='pnc'))
+
+    if os.path.isfile(download):
+        flash("Downloaded installer: {0}".format(installer))
+    else:
+        flash("Error downloading ONIE installer: {0}".format(installer))
+    return redirect(url_for('show_entries', _anchor='pnc'))
+
 @application.route('/launch', methods=['GET'])
 def launch():
     onie = OnieInstaller.get()
@@ -632,7 +767,7 @@ def launch():
 
     if not offline_install:
         print("Online setup")
-        raise Exception("Onine ONIE setup not implemented yet") # XXX: FIXME
+        fetch_online()
 
     if not write_dhcpd_conf():
         flash('Failed to write DHCHD config file')
