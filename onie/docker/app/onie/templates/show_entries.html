@@ -137,14 +137,14 @@ window.onload = function(e) {
   <hr/>
   <ul class=entries>
   <form action="{{url_for('ansible') }}" method="post">
-  <table class="paddedcells">
-    <tr><th/><th>Hostname</th><th>IP</th><th>Leaf</th><th>Spline</th><td/></tr>
+  <table class="thinborder">
+    <tr><th/><th>Hostname</th><th>IP</th><th>Leaf</th><th>Spine</th><td/></tr>
   {% for entry in entries %}
     <tr><td><input type="checkbox" name="switch" value="{{ entry.hostname }}"/></td>
         <td>{{ entry.hostname }}</td>
         <td>{{ entry.ip }}</td>
-        <td><input type="radio" name="tag-{{ entry.hostname }}" value="leaf" onclick="showSaveButton(this);"{% if entry.tag == "leaf" %} checked{% endif %}></td>
-        <td><input type="radio" name="tag-{{ entry.hostname }}" value="spine" onclick="showSaveButton(this);"{% if entry.tag == "spine" %} checked{% endif %}></td>
+        <td align="center"><input type="radio" name="tag-{{ entry.hostname }}" value="leaf" onclick="showSaveButton(this);"{% if entry.tag == "leaf" %} checked{% endif %}></td>
+        <td align="center"><input type="radio" name="tag-{{ entry.hostname }}" value="spine" onclick="showSaveButton(this);"{% if entry.tag == "spine" %} checked{% endif %}></td>
         <td><a href="{{ url_for('remove_entry', entry_id=entry.id) }}">remove</a></td>
     </tr>
   {% endfor %}
@@ -203,8 +203,8 @@ window.onload = function(e) {
 
   <hr/>
   <ul class=entries>
-  <table class="paddedcells">
-    <tr><th>Hostname</th><th>IP</th><th>MAC</th><th>Device ID</th><th>Type</th><th>RL</th><th>Activation</th><td/></tr>
+  <table class="thinborder">
+    <tr><th>Hostname</th><th>IP</th><th>MAC</th><th>Device ID</th><th>Type</th><th>URL</th><th>Activation</th><td/></tr>
   {% for entry in entries %}
     <tr>
         <td>{{ entry.hostname }}</td>
