@@ -30,15 +30,22 @@ Open the webpage by navigating to http://localhost:4000
 HTTP_PORT environment variable to the run command:*
 
 ```sh
-docker run --net=host -e HTTP_PORT=4050 pluribus-onie-ztp
+docker run --name pluribus-onie-ztp --net=host -e HTTP_PORT=4050 pluribus-onie-ztp
 ```
+
+After the container is started, `docker start` and `docker stop` can be used to shutdown and boot up the container.
+
+```sh
+docker stop pluribus-onie-ztp
+docker start pluribus-onie-ztp
+```
+
+**NOTE**: `docker run` creates a new container and throws away pre-existing state. `docker stop` and `docker start` re-use the container and maintain state.
 
 ## Manage the DHCP server after launching the container
 
 ```sh
-CONTAINER=$( docker ps --format '{{.ID}} {{.Image}}' | awk '$2 == "pluribus-onie-ztp" { print $1 }' )
-
-docker exec ${CONTAINER:-NOTRUNNING} supervisorctl status dhcpd
-docker exec ${CONTAINER:-NOTRUNNING} supervisorctl start dhcpd
-docker exec ${CONTAINER:-NOTRUNNING} supervisorctl stop dhcpd
+docker exec pluribius-onie-ztp supervisorctl status dhcpd
+docker exec pluribius-onie-ztp supervisorctl start dhcpd
+docker exec pluribius-onie-ztp supervisorctl stop dhcpd
 ```
