@@ -11,8 +11,7 @@ h2              { font-size: 1.2em; }
 .add-entry dl   { font-weight: bold; }
 .metanav        { text-align: right; font-size: 0.8em; padding: 0.3em;
                   margin-bottom: 1em; background: #fafafa; }
-.flash          { background: #cee5F5; padding: 0.5em;
-                  border: 1px solid #aacbe2; }
+.flash          { background: #ffe761; padding: 0.5em; }
 .error          { background: #f0d6d6; padding: 0.5em; }
 
 .paddedcells td { padding: 0 15px 0 15px; }
@@ -100,4 +99,98 @@ table.thinborder td, table.thinborder th {
     top: 0px;
     border-left: 20px solid transparent;
     border-bottom: 20px solid #F70000;
+}
+
+.button {
+    background-color: #9AC05A; /* Green */
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    border-radius: 5px;
+}
+
+.button-narrow {
+    background-color: #9AC05A; /* Green */
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    border-radius: 5px;
+}
+
+.green-button {
+    display:block;
+    width:20px;
+    height:20px;
+    line-height:30px;
+    border: 0;
+    border-radius: 50%;
+    color:green;
+    text-decoration:none;
+    text-indent: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    background: green;
+    box-shadow: 0 0 3px gray;
+    font-size:10px;
+    font-weight:bold;
+}
+
+.yellow-button {
+    display:block;
+    width:20px;
+    height:20px;
+    line-height:30px;
+    border: 0;
+    border-radius: 50%;
+    color:yellow;
+    text-decoration:none;
+    text-indent: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    background: yellow;
+    box-shadow: 0 0 3px gray;
+    font-size:10px;
+    font-weight:bold;
+}
+
+.red-button {
+    display:block;
+    width:20px;
+    height:20px;
+    line-height:30px;
+    border: 0;
+    border-radius: 50%;
+    color:red;
+    text-decoration:none;
+    text-indent: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    background: red;
+    box-shadow: 0 0 3px gray;
+    font-size:10px;
+    font-weight:bold;
+}
+
+.none-button {
+    display:block;
+    width:20px;
+    height:20px;
+    line-height:30px;
+    border: 1px;
+    border-radius: 50%;
+    text-decoration:none;
+    text-indent: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    background: none;
+    box-shadow: 0 0 3px black;                                                                                                                                                                                                          font-size:10px;
+    font-weight:bold;
 }

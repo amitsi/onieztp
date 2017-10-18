@@ -68,6 +68,11 @@ ACTIVATION_KEY_FILES = {
     DEVICE_TYPE_40G: os.path.join(WWW_ROOT, 'license_40g/onvl-activation-keys'),
 }
 
+SERVICE_NAME_MAP = {
+    'dhcpd': 'DHCP',
+    'nginx': 'HTTP',
+}
+
 EX_CSV_IMPORT_DUP_RE = re.compile(r"UNIQUE constraint failed.*\[parameters: \('([^']+)'")
 
 SUPERVISOR = 'supervisorctl'
@@ -363,7 +368,6 @@ class DhcpSubnet(db.Model):
             def_intf = None
             with open('/proc/net/route') as f:
                 for line in f.readlines()[1:]:
-                    print(line)
                     (intf, dest, x) = line.split(None, 2)
                     if dest == '00000000':
                         def_intf = intf
@@ -478,7 +482,7 @@ def show_entries():
     onie = OnieInstaller.get()
     ansible = AnsibleConfig.get()
     hostfiles = AnsibleHostsFile.query.order_by(AnsibleHostsFile.filename.desc()).all()
-    services = service_status(('dhcpd', 'nginx'))
+    services = service_status(('dhcpd',))
     assets = []
     products = []
     activation_keys = {}
@@ -508,7 +512,7 @@ def show_entries():
             entries=clients, onie=onie, ansible=ansible, hostfiles=hostfiles,
             assets=assets, products=products, activation_keys=activation_keys,
             activations_by_device_id=activations_by_device_id, onie_installers=onie_installers,
-            current=current)
+            current=current, services=services)
 
 @application.route('/confsubnet', methods=['POST'])
 def configure_subnet():
@@ -541,6 +545,10 @@ def configure_subnet():
 
     db.session.commit()
     flash('Subnet details updated')
+
+    if write_dhcpd_conf():
+        launch()
+
     return redirect(url_for('show_entries', _anchor='dhcp'))
 
 @application.route('/onie', methods=['POST'])
@@ -595,6 +603,9 @@ def add_entry():
         print(str(e))
         flash("Error adding DHCP host")
         return redirect(url_for('show_entries', _anchor='dhcp'))
+
+    if write_dhcpd_conf():
+        launch()
 
     msg = 'Host added'
 
@@ -760,6 +771,20 @@ def import_csv():
 def generate_dhcpd_conf():
     server = DhcpSubnet.get()
     clients = DhcpClient.query.all()
+    mandatory_server_params = ('subnet', 'subnet_mask', 'dhcp_range_start', 'dhcp_range_end',
+                               'dhcp_range_end', 'dns_primary', 'gateway')
+    mandatory_client_params = ('ip', 'mac')
+    for p in mandatory_server_params:
+        if not getattr(server, p):
+            flash("DHCP subnet configuration incomplete")
+            return ''
+
+    for client in clients:
+        for p in mandatory_client_params:
+            if not getattr(client, p):
+                flash("DHCP host configuration incomplete")
+                return ''
+
     return render_template("dhcpd.conf", server=server, clients=clients)
 
 def generate_ansible_hosts_file(switchnames):
@@ -837,7 +862,7 @@ def service_status(servicelist=()):
         if servicelist and service not in servicelist:
             continue
         services.append({
-            'service': service,
+            'service': SERVICE_NAME_MAP.get(service, service),
             'status': status,
             'details': details
         })
@@ -937,24 +962,8 @@ def launch():
     onie = OnieInstaller.get()
     offline_install = True
 
-    if not os.path.isfile(ONIE_INSTALLER_PATH):
-        print("ONIE installer not available locally")
-        if not onie or not onie.onie_version:
-            flash("ONIE version not specified")
-            return redirect(url_for('show_entries', _anchor='dhcp'))
-        offline_install = False
-
-    for f in ACTIVATION_KEY_FILES.values():
-        if not os.path.isfile(f):
-            print("Activation key not found: {0}".format(f))
-            offline_install = False
-
-    if not offline_install:
-        print("Online setup")
-        fetch_online()
-
     if not write_dhcpd_conf():
-        flash('Failed to write DHCHD config file')
+        flash('Failed to write DHCP config file')
         return redirect(url_for('show_entries', _anchor='dhcp'))
 
     if not restart_dhcpd():

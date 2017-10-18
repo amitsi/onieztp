@@ -77,7 +77,7 @@ window.onload = function(e) {
     <table class="thinborder">
         <tr><th>Name</th><th>Version</th><td/></tr>
     {% for product in products %}
-    <tr><td>{{ product.name }}</td><td>{{ product.version }}</td><td>{% if product.__downloaded %}<a href="/images/{{ product.sw_pid }}">available</a>{% else %}<a href="{{ url_for('download_onie', installer=product.sw_pid) }}">download from PN Cloud</a>{% endif %}</td></tr>
+    <tr><td>{{ product.name }}</td><td>{{ product.version }}</td><td>{% if product.__downloaded %}<a href="/images/{{ product.sw_pid }}">available</a>{% else %}<a href="{{ url_for('download_onie', installer=product.sw_pid) }}" class="button-narrow">download from PN Cloud</a>{% endif %}</td></tr>
     {% endfor %}
     </table>
 
@@ -101,7 +101,7 @@ window.onload = function(e) {
     <table class="thinborder">
         <tr><th>Type</th><td/></tr>
     {% for type, activation_key in activation_keys.items() %}
-    <tr><td>{{ type }}</td><td>{% if activation_key %}<a href="{{ activation_key }}">available</a>{% else %}<a href="{{ url_for('download_activation_key', dtype=type) }}">download from PN Cloud</a>{% endif %}</td></tr>
+    <tr><td>{{ type }}</td><td>{% if activation_key %}<a href="{{ activation_key }}">available</a>{% else %}<a href="{{ url_for('download_activation_key', dtype=type) }}" class="button-narrow">download from PN Cloud</a>{% endif %}</td></tr>
     {% endfor %}
     </table>
     </p><hr/>
@@ -145,7 +145,7 @@ window.onload = function(e) {
         <td>{{ entry.ip }}</td>
         <td align="center"><input type="radio" name="tag-{{ entry.hostname }}" value="leaf" onclick="showSaveButton(this);"{% if entry.tag == "leaf" %} checked{% endif %}></td>
         <td align="center"><input type="radio" name="tag-{{ entry.hostname }}" value="spine" onclick="showSaveButton(this);"{% if entry.tag == "spine" %} checked{% endif %}></td>
-        <td><a href="{{ url_for('remove_entry', entry_id=entry.id) }}">remove</a></td>
+        <td><a href="{{ url_for('remove_entry', entry_id=entry.id) }}" class="button-narrow">remove</a></td>
     </tr>
   {% endfor %}
   {% if entries %}
@@ -214,13 +214,23 @@ window.onload = function(e) {
         <td>{{ entry.device_id }}</td>
         <td>{{ entry.device_type }}</td>
         <td>{% if entry.default_url %}<a href="{{ entry.default_url }}" title="{{ entry.default_url }}">custom</a>{% endif %}</td>
-        <td>{% if activations_by_device_id.get(entry.device_id) %}active{% else %}<a href="{{ url_for('activate', deviceid=entry.device_id, devicetype=entry.device_type) }}">activate</a>{% endif %}</td>
-        <td><a href="{{ url_for('remove_entry', entry_id=entry.id) }}">remove</a></td>
+        <td>{% if activations_by_device_id.get(entry.device_id) %}active{% else %}<a href="{{ url_for('activate', deviceid=entry.device_id, devicetype=entry.device_type) }}" class="button-narrow">activate</a>{% endif %}</td>
+        <td><a href="{{ url_for('remove_entry', entry_id=entry.id) }}" class="button-narrow">remove</a></td>
     </tr>
   {% endfor %}
   </table>
   <p/>
   <hr/>
-  <a href="/launch">Launch DHCP Server</a><br/>
+  {% if services %}
+  <h3>Services</h3>
+  <table class="thinborder">
+    {% for service in services %}
+    <tr><td><span class="{% if service.status == 'RUNNING' %}green{% elif service.status == 'STOPPED' %}none{% else %}red{% endif %}-button"/></td><th>{{ service.service }}</th><td>{{ service.status }}</td><td>{{ service.details }}</td>
+      <td><a href="{{ url_for('launch') }}" class="button">{% if service.status == 'RUNNING' %}restart{% else %}start{% endif %}</a></td></tr>
+    {% endfor %}
+  </table>
+  <p/>
+  <hr/>
+  {% endif %}
 </div>
 {% endblock %}
