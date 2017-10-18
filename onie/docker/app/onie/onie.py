@@ -316,8 +316,8 @@ class DhcpSubnet(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     subnet = db.Column(db.String(40), nullable=False)
     subnet_mask = db.Column(db.String(40), nullable=False)
-    dhcp_range_start = db.Column(db.String(40), nullable=False)
-    dhcp_range_end = db.Column(db.String(40), nullable=False)
+    dhcp_range_start = db.Column(db.String(40), nullable=True)
+    dhcp_range_end = db.Column(db.String(40), nullable=True)
     dns_primary = db.Column(db.String(40), nullable=True)
     dns_secondary = db.Column(db.String(40), nullable=True)
     domain_name = db.Column(db.String(128), nullable=True)
@@ -333,6 +333,43 @@ class DhcpSubnet(db.Model):
         inst = klass.query.all()
         if inst:
             return inst[0]
+        else:
+            # Compute defaults
+            print("Computing defaults for DHCP subnet")
+
+            def_intf = None
+            with open('/proc/net/route') as f:
+                for line in f.readlines()[1:]:
+                    print(line)
+                    (intf, dest, x) = line.split(None, 2)
+                    if dest == '00000000':
+                        def_intf = intf
+                        print("Default gateway interface: {0}".format(def_intf))
+                        break
+
+            if def_intf:
+                ipnet = klass.ip_for_interface(def_intf)
+                subnet = str(ipnet.network)
+                subnet_mask = str(ipnet.netmask)
+                broadcast_address = str(ipnet.broadcast)
+                entry = klass(
+                            dhcp_interface=def_intf,
+                            subnet=subnet,
+                            subnet_mask=subnet_mask,
+                            broadcast_address=broadcast_address,
+                            dhcp_range_start='',
+                            dhcp_range_end='',
+                            dns_primary='',
+                            dns_secondary='',
+                            domain_name='',
+                            gateway='',
+                            default_url='')
+                db.session.add(entry)
+                db.session.commit()
+                print(entry)
+
+                return entry
+
         return None
 
     @classmethod
@@ -360,7 +397,6 @@ class DhcpSubnet(db.Model):
             print("Failed to obtain IP for interface: {0}".format(intf))
             return None
 
-        print("Server IP: \"{0}\"".format(myip))
         return myip
 
     @property
