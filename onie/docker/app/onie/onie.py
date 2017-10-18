@@ -487,6 +487,10 @@ def show_entries():
     products = []
     activation_keys = {}
     activations_by_device_id = {}
+    if server.server_ip:
+        http_base = "http://{0}:{1}".format(server.server_ip.ip, server.server_port)
+    else:
+        http_base = ''
 
     onie_installers = [os.path.basename(x) for x in glob.glob(os.path.join(WWW_ROOT, 'onie-installer-*'))]
     if os.path.islink(ONIE_INSTALLER_PATH):
@@ -512,7 +516,7 @@ def show_entries():
             entries=clients, onie=onie, ansible=ansible, hostfiles=hostfiles,
             assets=assets, products=products, activation_keys=activation_keys,
             activations_by_device_id=activations_by_device_id, onie_installers=onie_installers,
-            current=current, services=services)
+            current=current, services=services, http_base=http_base)
 
 @application.route('/confsubnet', methods=['POST'])
 def configure_subnet():

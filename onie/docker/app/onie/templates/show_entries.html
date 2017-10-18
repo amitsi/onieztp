@@ -92,14 +92,15 @@ window.onload = function(e) {
     </form>
     <p/><hr/>
 
-    {% if products %}
     <h3>ONIE Installers</h3>
+    {% if products %}
     <table class="thinborder">
         <tr><th>Name</th><th>Version</th><td/></tr>
     {% for product in products %}
-    <tr><td>{{ product.name }}</td><td>{{ product.version }}</td><td>{% if product.__downloaded %}<a href="/images/{{ product.sw_pid }}">available</a>{% else %}<a href="{{ url_for('download_onie', installer=product.sw_pid) }}" class="button-narrow">download from PN Cloud</a>{% endif %}</td></tr>
+    <tr><td>{{ product.name }}</td><td>{{ product.version }}</td><td>{% if product.__downloaded %}<a href="{{ http_base }}/images/{{ product.sw_pid }}">available</a>{% else %}<a href="{{ url_for('download_onie', installer=product.sw_pid) }}" class="button-narrow">download from PN Cloud</a>{% endif %}</td></tr>
     {% endfor %}
     </table>
+    {% endif %}
 
     {% if current %}<br/><small>Default ONIE installer: <strong>{{ current }}</strong></small>{% endif %}<br/>
     {% if onie_installers and onie_installers|length > 1 %}
@@ -121,14 +122,13 @@ window.onload = function(e) {
     </form>
 
     <p/><hr/>
-    {% endif %}
 
-    {% if activation_keys %}
     <h3>Activation Keys</h3>
+    {% if activation_keys %}
     <table class="thinborder">
         <tr><th>Type</th><td/></tr>
     {% for type, activation_key in activation_keys.items() %}
-    <tr><td>{{ type }}</td><td>{% if activation_key %}<a href="{{ activation_key }}">available</a>{% else %}<a href="{{ url_for('download_activation_key', dtype=type) }}" class="button-narrow">download from PN Cloud</a>{% endif %}</td></tr>
+    <tr><td>{{ type }}</td><td>{% if activation_key %}<a href="{{ http_base }}{{ activation_key }}">available</a>{% else %}<a href="{{ url_for('download_activation_key', dtype=type) }}" class="button-narrow">download from PN Cloud</a>{% endif %}</td></tr>
     {% endfor %}
     </table>
     </p><hr/>
@@ -165,7 +165,7 @@ window.onload = function(e) {
     <p/><hr/>
     {% endif %}
 
-    <a href="/images">Available ONIE installers and activation keys</a><br/>
+    <a href="{{ http_base }}/images">Available ONIE installers and activation keys</a><br/>
 </div>
 
 <div id="tab-ansible" class="tabcontent">
@@ -207,7 +207,7 @@ window.onload = function(e) {
   <h3>Generated Hostfiles</h3>
   <ul>
       {% for hostfile in hostfiles %}
-      <li><a href="/images/ansible_hosts/{{ hostfile.filename }}" title="Hosts: {{ hostfile.hosts }}">{{ hostfile.filename }}</a></li>
+      <li><a href="{{ http_base }}/images/ansible_hosts/{{ hostfile.filename }}" title="Hosts: {{ hostfile.hosts }}">{{ hostfile.filename }}</a></li>
       {% endfor %}
   </ul>
   {% endif %}
@@ -224,7 +224,7 @@ window.onload = function(e) {
         <tr><th>Subnet Mask:</th><td><input type="text" size="40" name="subnet_mask" value="{{ server.subnet_mask }}" placeholder="255.255.0.0"/> <em>The subnet mask of the DHCP subnet</em></td></tr>
         <tr><th>Broadcast Address:</th><td><input type="text" size="40" name="broadcast_address" value="{{ server.broadcast_address }}" placeholder="10.9.255.255"/> <em>Broadcast address for the subnet</em></td></tr>
         <tr><th>DHCP Range Start:</th><td><input type="text" size="40" name="dhcp_range_start" value="{{ server.dhcp_range_start }}" placeholder="10.9.31.142"/> <em>The first IP of DHCP range</em></td></tr>
-        <tr><th>DHCP Range End:</th><td><input type="text" size="40" name="dhcp_range_end" value="{{ server.dhcp_range_end }}" placeholder="10.9.31.149"/> <em>thelast IP of the DHCP range</em></td></tr>
+        <tr><th>DHCP Range End:</th><td><input type="text" size="40" name="dhcp_range_end" value="{{ server.dhcp_range_end }}" placeholder="10.9.31.149"/> <em>The last IP of the DHCP range</em></td></tr>
         <tr><th>Primary DNS:</th><td><input type="text" size="40" name="dns_primary" value="{{ server.dns_primary }}" placeholder="10.9.10.1"/> <em>The primary DNS server to be configured on the hosts</em></td></tr>
         <tr><th>Secondary DNS:</th><td><input type="text" size="40" name="dns_secondary" value="{{ server.dns_secondary }}" placeholder="10.20.4.1"/> <em>The secondary DNS server to be configured on the hosts</em></td></tr>
         <tr><th>Domain Name:</th><td><input type="text" size="40" name="domain_name" value="{{ server.domain_name }}" placeholder="pluribusnetworks.com"/> <em>The domain name to be configured on the hosts</em></td></tr>

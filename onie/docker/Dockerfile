@@ -37,7 +37,13 @@ RUN mkdir -p /var/www/html/images/license_10g \
 
 ENV UWSGI_INI /app/uwsgi.ini
 ENV HTTP_PORT 4000
+ENV HTTPS_PORT 4443
 ENV DHCP_INTERFACE eth0
+
+WORKDIR /root/certs
+RUN openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem \
+	-subj "/C=US/ST=CA/L=Palo Alto/O=Pluribus Networks/OU=Eng/CN=onie.pluribusnetworks.com" \
+	-days 3650 -nodes
 
 # Add demo app
 COPY ./app /app
