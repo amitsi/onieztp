@@ -3,6 +3,7 @@ FROM python:3
 ENV NGINX_VERSION 1.13.5-2~jessie
 
 RUN pip install \
+	cryptography \
 	flask \
 	flask_sqlalchemy \
 	netaddr \

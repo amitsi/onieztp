@@ -1,3 +1,4 @@
+from cryptography.fernet import Fernet
 import csv
 import datetime
 import glob
@@ -47,6 +48,8 @@ PNC_ACTIVATION_KEY_FOR = 'https://cloud-web.pluribusnetworks.com/api/offline_bun
 PNC_ONIE_DOWNLOAD_FOR = 'https://cloud-web.pluribusnetworks.com/api/download_image1/{0}?version={1}'.format
 PNC_ASSETS = 'https://cloud-web.pluribusnetworks.com/api/assets'
 PNC_PRODUCTS = 'https://cloud-web.pluribusnetworks.com/api/products'
+
+KEYFILE = '/var/tmp/.key'
 
 WWW_ROOT = '/var/www/html/images'
 ONIE_INSTALLER_PATH = os.path.join(WWW_ROOT, 'onie-installer')
@@ -152,7 +155,7 @@ class PnCloud:
                 print("PN cloud details not configured")
                 return False
 
-            data = {"login_email": onie.username, "login_password": onie.password}
+            data = {"login_email": onie.username, "login_password": decrypt_password(onie.password)}
             resp = self._api_post(PNC_LOGIN, data)
             self.logged_in = resp.get('success', False)
             if self.logged_in:
@@ -282,6 +285,26 @@ class PnCloud:
             return ''
 
         return outfile
+
+def encrypt_password(password):
+    if not os.path.isfile(KEYFILE):
+        with open(KEYFILE, 'wb') as f:
+            f.write(Fernet.generate_key())
+
+    with open(KEYFILE, 'rb') as f:
+        key = f.read()
+
+    f = Fernet(key)
+    if not isinstance(password, bytes):
+        password = password.encode()
+    return f.encrypt(password)
+
+def decrypt_password(password):
+    with open(KEYFILE, 'rb') as f:
+        key = f.read()
+
+    f = Fernet(key)
+    return f.decrypt(password).decode('utf-8')
 
 #
 # FLASK
@@ -434,6 +457,10 @@ class AnsibleConfig(db.Model):
             return inst[0]
         return None
 
+    @property
+    def ssh_pass_decrypted(self):
+        return decrypt_password(self.ssh_pass)
+
 class AnsibleHostsFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), nullable=True)
@@ -519,13 +546,15 @@ def configure_subnet():
 @application.route('/onie', methods=['POST'])
 def configure_onie():
     entry = OnieInstaller.get()
+    username = request.form['username']
+    password = encrypt_password(request.form['password'])
     if entry:
-        for p in ['username', 'password']:
-            if request.form[p]:
-                setattr(entry, p, request.form[p])
+        if request.form['username']:
+            entry.username = username
+        if request.form['password']:
+            entry.password = password
     else:
-        entry = OnieInstaller(username=request.form['username'],
-                              password=request.form['password'])
+        entry = OnieInstaller(username=username, password=password)
         db.session.add(entry)
 
     db.session.commit()
@@ -535,13 +564,15 @@ def configure_onie():
 @application.route('/ansible', methods=['POST'])
 def configure_ansible():
     entry = AnsibleConfig.get()
+    username = request.form['ssh_user']
+    password = encrypt_password(request.form['ssh_pass'])
     if entry:
-        for p in ['ssh_user', 'ssh_pass']:
-            if request.form[p]:
-                setattr(entry, p, request.form[p])
+        if request.form['ssh_user']:
+            entry.ssh_user = username
+        if request.form['ssh_pass']:
+            entry.ssh_pass = password
     else:
-        entry = AnsibleConfig(ssh_user=request.form['ssh_user'],
-                              ssh_pass=request.form['ssh_pass'])
+        entry = AnsibleConfig(ssh_user=username, ssh_pass=password)
         db.session.add(entry)
 
     db.session.commit()
