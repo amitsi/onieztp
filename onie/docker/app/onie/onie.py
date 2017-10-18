@@ -692,23 +692,26 @@ def upload_onie():
 def upload_licences():
     if request.method == 'POST':
         if '10g_license' not in request.files \
-                or '40g_license' not in request.files:
+                and '40g_license' not in request.files:
             flash("Files not provided")
             return redirect(url_for('show_entries', _anchor='pnc'))
 
-        licence_10g = request.files['10g_license']
-        licence_40g = request.files['40g_license']
-        if licence_10g.filename == '' or licence_40g.filename == '':
-            flash("Licence files not selected")
-            return redirect(url_for('show_entries', _anchor='pnc'))
+        for lictype, code in (('10g_license', DEVICE_TYPE_10G),
+                              ('40g_license', DEVICE_TYPE_40G)):
+            if not lictype in request.files:
+                continue
+            lic = request.files[lictype]
+            if lic.filename == '':
+                flash("License file not selected")
+                return redirect(url_for('show_entries', _anchor='pnc'))
 
-        if not licence_10g or not licence_40g:
-            flash("Failed to upload licences")
-            return redirect(url_for('show_entries', _anchor='pnc'))
+            if not lic:
+                flash("Failed to upload license")
+                return redirect(url_for('show_entries', _anchor='pnc'))
 
-        licence_10g.save(ACTIVATION_KEY_FILES[DEVICE_TYPE_10G])
-        licence_40g.save(ACTIVATION_KEY_FILES[DEVICE_TYPE_40G])
-        flash("Licenses uploaded")
+            lic.save(ACTIVATION_KEY_FILES[code])
+            flash("{0} license uploaded".format(code.upper()))
+
         return redirect(url_for('show_entries', _anchor='pnc'))
     else:
         return render_template("upload_licenses.html")

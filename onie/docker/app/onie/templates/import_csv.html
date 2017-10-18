@@ -1,4 +1,13 @@
 {% extends "layout.html" %}
+{% block javascript %}
+<script>
+window.onload = function(e) {
+  document.getElementById('csv-import').onchange = function() {
+    document.getElementById('csv-import-form').submit();
+  }
+}
+</script>
+{% endblock %}
 {% block body %}
     <h3>Import DHCP hosts list in CSV format</h3>
     Format: <tt>mac, ip, hostname, device_id, device_type, default_url</tt>
@@ -8,8 +17,10 @@
 02:42:b4:c9:6d:1e,10.9.1.1,pikachu,671232X1646008,10g
 8c:89:a5:f4:28:2f,10.9.1.2,lapras,671232X1645002,40g,http://somewhere/onie-installer
     </pre>
-    <form action="{{ url_for('import_csv') }}" method=post enctype="multipart/form-data">
-      <p><input type="file" name="hosts_csv"/><br/>
-         <input type="submit" value="Upload"/>
+    <form id="csv-import-form" action="{{ url_for('import_csv') }}" method=post enctype="multipart/form-data">
+      <p><div class="upload-btn-wrapper">
+         <button class="upload-btn">Upload CSV file</button>
+         <input id="csv-import" type="file" name="hosts_csv"/>
+         </div>
     </form>
 {% endblock %}

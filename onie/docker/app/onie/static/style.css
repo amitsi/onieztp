@@ -194,3 +194,27 @@ table.thinborder td, table.thinborder th {
     box-shadow: 0 0 3px black;                                                                                                                                                                                                          font-size:10px;
     font-weight:bold;
 }
+
+.upload-btn-wrapper {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+}
+
+.upload-btn {
+  border: 2px solid #9AC05A;
+  color: #9AC05A;
+  background-color: white;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.upload-btn-wrapper input[type=file] {
+  font-size: 100px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+}

@@ -50,6 +50,26 @@ window.onload = function(e) {
           setDefaultTab('pnc');
           break;
   }
+
+  document.getElementById('csv-import').onchange = function() {
+    document.getElementById('csv-import-form').submit();
+  }
+
+  document.getElementById('onie-upload').onchange = function() {
+    document.getElementById('onie-upload-form').submit();
+  }
+
+  if (document.getElementById('lic-10g-upload')) {
+    document.getElementById('lic-10g-upload').onchange = function() {
+      document.getElementById('lic-10g-upload-form').submit();
+    }
+  }
+
+  if (document.getElementById('lic-40g-upload')) {
+    document.getElementById('lic-40g-upload').onchange = function() {
+      document.getElementById('lic-40g-upload-form').submit();
+    }
+  }
 };
 </script>
 {% endblock %}
@@ -93,6 +113,13 @@ window.onload = function(e) {
     </form>
     {% endif %}
 
+    <form id="onie-upload-form" action="{{ url_for('upload_onie') }}" method=post enctype="multipart/form-data">
+      <p><div class="upload-btn-wrapper">
+         <button class="upload-btn">Upload ONIE Installer</button>
+         <input id="onie-upload" type="file" name="onie_installer"/>
+         </div>
+    </form>
+
     <p/><hr/>
     {% endif %}
 
@@ -107,6 +134,26 @@ window.onload = function(e) {
     </p><hr/>
     {% endif %}
 
+    <div>
+    {% if not activation_keys['10g'] %}
+    <form style="display: inline-block;" id="lic-10g-upload-form" action="{{ url_for('upload_licences') }}" method=post enctype="multipart/form-data">
+      <p><div class="upload-btn-wrapper">
+         <button class="upload-btn">Upload 10G License</button>
+         <input id="lic-10g-upload" type="file" name="10g_license"/>
+         </div>
+    </form>
+    {% endif %}
+
+    {% if not activation_keys['40g'] %}
+    <form style="display: inline-block;" id="lic-40g-upload-form" action="{{ url_for('upload_licences') }}" method=post enctype="multipart/form-data">
+      <p><div class="upload-btn-wrapper">
+         <button class="upload-btn">Upload 40G License</button>
+         <input id="lic-40g-upload" type="file" name="40g_license"/>
+         </div>
+    </form>
+    {% endif %}
+    </div>
+
     {% if assets %}
     <h3>Assets</h3>
     <table class="thinborder">
@@ -118,9 +165,7 @@ window.onload = function(e) {
     <p/><hr/>
     {% endif %}
 
-    <a href="/images">Downloaded ONIE installers and activation keys</a><br/>
-    <a href="{{ url_for('upload_onie') }}">Upload ONIE Installer</a><br/>
-    <a href="{{ url_for('upload_licences') }}">Upload Licences</a><br/>
+    <a href="/images">Available ONIE installers and activation keys</a><br/>
 </div>
 
 <div id="tab-ansible" class="tabcontent">
@@ -197,9 +242,15 @@ window.onload = function(e) {
         <tr><th>Device Type:</th><td><input type="text" size="40" name="device_type" placeholder="40g"/> <em>Specify if it is 40g or 10g or 100g platform</em></td></tr>
         <tr><th>Default URL:</th><td><input type="text" size="40" name="default_url" placeholder="http://{% if server.server_ip %}{{ server.server_ip.ip }}{% else %}10.9.10.127{% endif %}:{{ server.server_port or '4000' }}/images/onie-installer"/> <em>Default URL will be selected; change to modify</em></td></tr>
         <tr><td/><td><input type="submit" value="Add"/></td></tr>
-        <tr/>
-        <tr><td colspan="2"><small><a href="{{ url_for('import_csv') }}">Import entries from CSV file</a></small></td></tr>
       </table>
+    </form>
+
+    <form id="csv-import-form" action="{{ url_for('import_csv') }}" method=post enctype="multipart/form-data">
+      <p><div class="upload-btn-wrapper">
+         <button class="upload-btn">Upload CSV file</button>
+         <input id="csv-import" type="file" name="hosts_csv"/>
+         </div>
+      <small><a href="{{ url_for('import_csv') }}">CSV file format</a></small>
     </form>
 
   <hr/>
