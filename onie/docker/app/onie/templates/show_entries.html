@@ -179,6 +179,7 @@ window.onload = function(e) {
       </table>
     </form>
 
+  {% if entries %}
   <hr/>
   <ul class=entries>
   <form action="{{url_for('ansible') }}" method="post">
@@ -199,6 +200,7 @@ window.onload = function(e) {
   {% endif %}
   </table>
   </form>
+  {% endif %}
 
   {% if hostfiles %}
   <hr/>
@@ -253,6 +255,7 @@ window.onload = function(e) {
       <small><a href="{{ url_for('import_csv') }}">CSV file format</a></small>
     </form>
 
+  {% if entries %}
   <hr/>
   <ul class=entries>
   <table class="thinborder">
@@ -270,6 +273,7 @@ window.onload = function(e) {
     </tr>
   {% endfor %}
   </table>
+  {% endif %}
   <p/>
   <hr/>
   {% if services %}
