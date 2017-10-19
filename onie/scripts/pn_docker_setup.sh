@@ -533,7 +533,7 @@ run_docker_img() {
 }
 
 show_onie_access_page() {
-	ipaddr=$(docker exec -i pluribus-onie-ztp sh -c "ip addr show eth0 | grep -oP 'inet \K\S+' | cut -d/ -f1")
+	ipaddr=$(docker exec -i pluribus-onie-ztp sh -c "ip addr show | grep 'inet ' | grep global | grep -v docker | grep -oP 'inet \K\S+' | cut -d/ -f1")
 	echo "========================================================================="
 	echo "To Access Pluribus ZTP ONIE Server go to : http://$ipaddr:$HTTP_PORT"
 	echo "========================================================================="
