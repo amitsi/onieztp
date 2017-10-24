@@ -431,6 +431,19 @@ class DhcpSubnet(db.Model):
         return int(os.environ.get('HTTP_PORT', '5000'))
 
     @property
+    def relayed_subnet(self):
+        if not self.server_ip or not self.subnet or not self.subnet_mask:
+            return False
+        try:
+            subnet = IPNetwork("{0}/{1}".format(self.subnet, self.subnet_mask))
+            if self.server_ip.ip not in subnet:
+                return True
+        except Exception as e:
+            print("Attempt to detect DHCP relay failed: {0}".format(e))
+
+        return False
+
+    @property
     def onie_url(self):
         if self.default_url:
             return self.default_url
