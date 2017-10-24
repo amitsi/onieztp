@@ -48,6 +48,7 @@ PNC_ACTIVATION_KEY_FOR = 'https://cloud-web.pluribusnetworks.com/api/offline_bun
 PNC_ONIE_DOWNLOAD_FOR = 'https://cloud-web.pluribusnetworks.com/api/download_image1/{0}?version={1}'.format
 PNC_ASSETS = 'https://cloud-web.pluribusnetworks.com/api/assets'
 PNC_PRODUCTS = 'https://cloud-web.pluribusnetworks.com/api/products'
+ONIE_INSTALLER_RE = re.compile(r'^onie-installer-([\d\.]+)-(\d+)$')
 
 KEYFILE = '/var/tmp/.key'
 
@@ -488,6 +489,24 @@ class AnsibleHostsFile(db.Model):
 # VIEWS
 #
 
+def onie_installer_details(installer):
+    m = ONIE_INSTALLER_RE.search(installer)
+    ret = { 'installer': installer }
+    if not m:
+        ret['name'] = installer.replace('onie-installer-', '')
+        ret['version'] = 'Unknown'
+        return ret
+
+    major = m.group(1)
+    minor = m.group(2)
+    majorcode = ''.join([ ("%02d" % int(x)) for x in major.split('.') ]).lstrip('0')
+    if minor.startswith(majorcode):
+        minor = minor[len(majorcode):]
+
+    ret['version'] = "{0}-{1}".format(major, minor)
+    ret['name'] = "ONVL {0} ONIE".format(ret['version'])
+    return ret
+
 @application.route('/')
 def show_entries():
     server = DhcpSubnet.get()
@@ -525,11 +544,14 @@ def show_entries():
             for a in det['order_activations']:
                 activations_by_device_id[a['device_id']] = True
 
+    downloaded = [ x['sw_pid'] for x in products if x['__downloaded'] ]
+    uploaded = [ onie_installer_details(x) for x in onie_installers if x not in downloaded ]
+
     return render_template('show_entries.html', server=server,
             entries=clients, onie=onie, ansible=ansible, hostfiles=hostfiles,
             assets=assets, products=products, activation_keys=activation_keys,
             activations_by_device_id=activations_by_device_id, onie_installers=onie_installers,
-            current=current, services=services, http_base=http_base)
+            uploaded=uploaded, current=current, services=services, http_base=http_base)
 
 @application.route('/confsubnet', methods=['POST'])
 def configure_subnet():

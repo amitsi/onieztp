@@ -94,25 +94,21 @@ window.onload = function(e) {
 
     <h3>ONIE Installers</h3>
     {% if products %}
+    <form action="{{ url_for('set_default_onie') }}" method="post">
     <table class="thinborder">
-        <tr><th>Name</th><th>Version</th><td/></tr>
+        <tr><th>Name</th><th>Version</th><th>Status</th><th>Default</th></tr>
     {% for product in products %}
-    <tr><td>{{ product.name }}</td><td>{{ product.version }}</td><td>{% if product.__downloaded %}<a href="{{ http_base }}/images/{{ product.sw_pid }}">available</a>{% else %}<a href="{{ url_for('download_onie', installer=product.sw_pid) }}" class="button-narrow">download from PN Cloud</a>{% endif %}</td></tr>
+    <tr><td>{{ product.name }}</td><td>{{ product.version }}</td><td>{% if product.__downloaded %}<a href="{{ http_base }}/images/{{ product.sw_pid }}">available</a>{% else %}<a href="{{ url_for('download_onie', installer=product.sw_pid) }}" class="button-narrow">download from PN Cloud</a>{% endif %}</td><td align="center" valign="center"><input type="radio" name="installer" value="{{ product.sw_pid }}"{% if not product.__downloaded %} disabled{% else %}{% if product.sw_pid == current %} checked{% endif %} onclick="this.form.submit()"{% endif %}></td></tr>
+    {% endfor %}
+
+    {% for ins in uploaded %}
+    <tr><td>{{ ins.name }}</td><td>{{ ins.version }}</td><td><a href="{{ http_base }}/images/{{ ins.installer }}">uploaded, available</a></td><td align="center" valign="center"><input type="radio" name="installer" value="{{ ins.installer }}"{% if ins.installer == current %} checked{% endif %} onclick="this.form.submit()"></td></tr>
     {% endfor %}
     </table>
-    {% endif %}
-
-    {% if current %}<br/><small>Default ONIE installer: <strong>{{ current }}</strong></small>{% endif %}<br/>
-    {% if onie_installers and onie_installers|length > 1 %}
-    <form action="{{ url_for('set_default_onie') }}" method="post">
-      <select name="installer">
-        {% for installer in onie_installers %}
-        <option value="{{ installer }}"{% if installer == current %} selected{% endif %}>{{ installer }}</option>
-        {% endfor %}
-      </select>
-      <input type="submit" value="Change Default"/>
     </form>
     {% endif %}
+
+    {% if current %}<br/><small>Default ONIE installer also available at: <strong><a href="{{ http_base }}/images/onie-installer">{{ http_base }}/images/onie-installer</a></strong></small>{% endif %}<br/>
 
     <form id="onie-upload-form" action="{{ url_for('upload_onie') }}" method=post enctype="multipart/form-data">
       <p><div class="upload-btn-wrapper">
