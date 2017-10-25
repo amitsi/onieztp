@@ -536,6 +536,8 @@ def show_entries():
         for det in pnc.order_details():
             for a in det['order_activations']:
                 activations_by_device_id[a['device_id']] = True
+    elif onie and onie.username and onie.password:
+        flash("Failed to log in to PN Cloud as user \"{0}\"".format(onie.username))
 
     downloaded = [ x['sw_pid'] for x in products if x['__downloaded'] ]
     uploaded = [ onie_installer_details(x) for x in onie_installers if x not in downloaded ]
