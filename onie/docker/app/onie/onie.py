@@ -177,6 +177,13 @@ class PnCloud:
 
         return self.logged_in
 
+    def logout(self):
+        if self.logged_in:
+            print("Logging out user: {0} ({1})".format(self.username,
+                self.full_name))
+            self.logged_in = False
+        return True
+
     def order_details(self):
         if not self.logged_in:
             print("Not logged in")
@@ -600,6 +607,10 @@ def configure_onie():
         db.session.add(entry)
 
     db.session.commit()
+
+    pnc = PnCloud.get()
+    pnc.logout()
+
     flash('PN Cloud details updated')
     return redirect(url_for('show_entries', _anchor='pnc'))
 
