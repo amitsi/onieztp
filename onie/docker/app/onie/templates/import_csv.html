@@ -10,12 +10,13 @@ window.onload = function(e) {
 {% endblock %}
 {% block body %}
     <h3>Import DHCP hosts list in CSV format</h3>
-    Format: <tt>mac, ip, hostname, device_id, device_type, default_url</tt>
+    Format: <tt>mac, ip, hostname, device_id, device_type, default_url, tag</tt>
     <p/>
     Example:
     <pre>
 02:42:b4:c9:6d:1e,10.9.1.1,pikachu,671232X1646008,10g
-8c:89:a5:f4:28:2f,10.9.1.2,lapras,671232X1645002,40g,http://somewhere/onie-installer
+8c:89:a5:f4:28:2f,10.9.1.2,lapras,671232X1645002,40g,http://somewhere/onie-installer,leaf
+8c:89:a5:f3:28:2e,10.9.1.4,gyarados,671232X1665731,40g,,spine
     </pre>
     <form id="csv-import-form" action="{{ url_for('import_csv') }}" method=post enctype="multipart/form-data">
       <p><div class="upload-btn-wrapper">

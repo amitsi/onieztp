@@ -1,6 +1,6 @@
 {%- for tag, hosts in tags.items() -%}
 [{{ tag }}]
 {%- for host in hosts %}
-{{ host.hostname }} ansible_host={{ host.ip }} ansible_user="{{ ansible.ssh_user }}" ansible_ssh_pass="{{ ansible.ssh_pass_decrypted }}"{% endfor %}
+{{ host.hostname }} ansible_host={{ host.ip }} ansible_user="{{ ansible.ssh_user or '{{ SSH_USER }}' }}" ansible_ssh_pass="{{ ansible.ssh_pass_decrypted or '{{ SSH_PASS }}' }}"{% endfor %}
 
 {% endfor %}

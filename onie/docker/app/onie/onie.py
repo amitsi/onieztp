@@ -781,7 +781,8 @@ def import_csv():
             text = hosts_csv.read().decode('ascii')
             lines = text.split("\n")
             reader = csv.DictReader(lines, delimiter=",",
-                        fieldnames=("mac", "ip", "hostname", "device_id", "device_type", "default_url"))
+                        fieldnames=("mac", "ip", "hostname", "device_id",
+                                "device_type", "default_url", "tag"))
         except Exception as e:
             print(e)
             flash("Failed to load CSV file")
@@ -789,6 +790,8 @@ def import_csv():
 
         try:
             for row in reader:
+                if not row['tag']:
+                    row['tag'] = 'leaf'
                 entry = DhcpClient(**row)
                 db.session.add(entry)
         except Exception as e:
