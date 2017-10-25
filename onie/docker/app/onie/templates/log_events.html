@@ -1,0 +1,8 @@
+{% block body %}
+    <pre id="logtext">
+{% for event in events %}{{ event.ip }}  {{ event.datetime }}  {{ event.verb }} {{ event.url }}  {{ event.statuscode }}  {{ event.bytes }}
+{% else %}
+No downloads so far
+{% endfor %}
+    </pre>
+{% endblock %}

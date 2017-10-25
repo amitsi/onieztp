@@ -6,6 +6,7 @@
 .filter-table .quick { margin-left: 0.5em; font-size: 0.8em; text-decoration: none; }
 .fitler-table .quick:hover { text-decoration: underline; }
 td.alt { background-color: #ffc; background-color: rgba(255, 255, 0, 0.2); }
+#logtext { padding: 1.5em; }
 </style>
 <script>
 function openTab(evt, tabName) {
@@ -45,11 +46,20 @@ function setDefaultTab(name) {
     document.getElementById(button).className += " active";
 }
 
+function loadLogs() {
+    $("#logdiv").load("{{ url_for('log_events') }}", function(respTxt, statusTxt, xhr) {
+            setTimeout(loadLogs, 30000);
+    });
+}
+
 window.onload = function(e) {
+  loadLogs();
+
   hash = window.location.hash.substr(1);
   switch (hash) {
       case 'ansible':
       case 'leases':
+      case 'logs':
       case 'pnc':
       case 'dhcp':
           setDefaultTab(hash);
@@ -87,6 +97,7 @@ window.onload = function(e) {
   <button id='button-dhcp' class="tablinks" onclick="openTab(event, 'tab-dhcp')">DHCP</button>
   <button id='button-ansible' class="tablinks" onclick="openTab(event, 'tab-ansible')">Ansible</button>
   <button id='button-leases' class="tablinks" onclick="openTab(event, 'tab-leases')">DHCP Leases</button>
+  <button id='button-logs' class="tablinks" onclick="openTab(event, 'tab-logs')">Logs / Troubleshooting</button>
 </div>
 
 <div id="tab-pnc" class="tabcontent">
@@ -102,7 +113,7 @@ window.onload = function(e) {
     <p/><hr/>
 
     <h3>ONIE Installers</h3>
-    {% if products %}
+    {% if products  or uploaded %}
     <form action="{{ url_for('set_default_onie') }}" method="post">
     <table class="thinborder">
         <tr><th>Name</th><th>Version</th><th>Status</th><th>Default</th></tr>
@@ -315,6 +326,15 @@ window.onload = function(e) {
         {% endfor %}
         </tbody>
     </table>
+</div>
+
+<div id="tab-logs" class="tabcontent">
+    <h3>Logs / Troubleshooting</h3>
+
+    <strong>Download Logs</strong>
+    <div id="logdiv" style="overflow: auto; height: 10em; background-color: white;">
+    </div>
+
 </div>
 
 <script>

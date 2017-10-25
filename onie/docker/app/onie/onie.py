@@ -52,9 +52,11 @@ PNC_ONIE_DOWNLOAD_FOR = 'https://cloud-web.pluribusnetworks.com/api/download_ima
 PNC_ASSETS = 'https://cloud-web.pluribusnetworks.com/api/assets'
 PNC_PRODUCTS = 'https://cloud-web.pluribusnetworks.com/api/products'
 ONIE_INSTALLER_RE = re.compile(r'^onie-installer-([\d\.]+)-(\d+)$')
+NGINX_ACCESS_LOG_RE = re.compile(r'(?P<ip>[\d\.]+) - - \[(?P<datetime>[^\]]+)\] "(?P<verb>\w+) (?P<url>/images/..*?) HTTP/[\d\.]+" (?P<statuscode>\d+) (?P<bytes>\d+)')
 
 KEYFILE = '/var/tmp/.key'
 LEASES_FILE = '/var/lib/dhcp/dhcpd.leases'
+NGINX_ACCESS_LOG = '/var/log/nginx/access.log'
 
 WWW_ROOT = '/var/www/html/images'
 ONIE_INSTALLER_PATH = os.path.join(WWW_ROOT, 'onie-installer')
@@ -1135,6 +1137,18 @@ def ansible_hosts():
             mimetype='text/plain',
             headers={"Content-disposition":
                      "attachment; filename=hosts"})
+
+@application.route('/logevents', methods=['GET'])
+def log_events():
+    events = []
+    with open(NGINX_ACCESS_LOG) as f:
+        for line in f.readlines():
+            m = NGINX_ACCESS_LOG_RE.search(line)
+            if m:
+                events.append(m.groupdict())
+
+    return render_template('log_events.html', events=reversed(events))
+
 
 if __name__ == "__main__":
     application.run(host='0.0.0.0')

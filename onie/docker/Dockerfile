@@ -21,8 +21,7 @@ RUN apt-key adv --keyserver hkp://pgp.mit.edu:80 --recv-keys 573BFD6B3D8FBC64107
 	&& rm -rf /var/lib/apt/lists/*
 
 # nginx
-RUN ln -sf /dev/stdout /var/log/nginx/access.log \
-	&& ln -sf /dev/stderr /var/log/nginx/error.log
+RUN touch /var/log/nginx/access.log /var/log/nginx/error.log
 
 RUN echo "daemon off;" >> /etc/nginx/nginx.conf
 RUN rm -f /etc/nginx/conf.d/default.conf
@@ -55,10 +54,6 @@ ENV FLASK_APP onie
 ENV FLASK_DEBUG true
 
 RUN flask initdb
-
-# XXX: TEST CODE BEGIN
-COPY dhcpd.conf.sample /etc/dhcp/dhcpd.conf
-# XXX: TEST CODE END
 
 COPY ./run.sh /
 CMD ["/run.sh"]
