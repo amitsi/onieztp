@@ -1,5 +1,12 @@
 {% extends "layout.html" %}
 {% block javascript %}
+<script src="/static/jquery-3.2.1.min.js"></script>
+<script src="/static/jquery.filtertable.min.js"></script>
+<style>
+.filter-table .quick { margin-left: 0.5em; font-size: 0.8em; text-decoration: none; }
+.fitler-table .quick:hover { text-decoration: underline; }
+td.alt { background-color: #ffc; background-color: rgba(255, 255, 0, 0.2); }
+</style>
 <script>
 function openTab(evt, tabName) {
     // Declare all variables
@@ -291,7 +298,7 @@ window.onload = function(e) {
     <h3>Configure PN Cloud Details</h3>
 
     <small><em><strong>Note:</strong> Static DHCP hosts are not listed here.</em></small><p/>
-    <table class="thinborder">
+    <table id='tableases' class="thinborder">
         <tr><th>MAC</th><th>IP</th><th>Lease Start</th><th>Lease End</th><th>Active</th></tr>
         {% for lease in dhcp_leases %}
         <tr><td><strong>{{ lease.ethernet }}</strong></td>
@@ -305,5 +312,9 @@ window.onload = function(e) {
         {% endfor %}
     </table>
 </div>
+
+<script>
+$( "#tableases" ).filterTable();
+</script>
 
 {% endblock %}
