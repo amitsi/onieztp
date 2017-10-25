@@ -57,6 +57,8 @@ NGINX_ACCESS_LOG_RE = re.compile(r'(?P<ip>[\d\.]+) - - \[(?P<datetime>[^\]]+)\] 
 KEYFILE = '/var/tmp/.key'
 LEASES_FILE = '/var/lib/dhcp/dhcpd.leases'
 NGINX_ACCESS_LOG = '/var/log/nginx/access.log'
+TSHARK_LOG = '/var/log/tshark.log'
+DHCP_INTERFACE_NAME = '/var/run/dhcp_interface'
 
 WWW_ROOT = '/var/www/html/images'
 ONIE_INSTALLER_PATH = os.path.join(WWW_ROOT, 'onie-installer')
@@ -78,12 +80,15 @@ ACTIVATION_KEY_FILES = {
 SERVICE_NAME_MAP = {
     'dhcpd': 'DHCP',
     'nginx': 'HTTP',
+    'tshark': 'TShark',
 }
 
 EX_CSV_IMPORT_DUP_RE = re.compile(r"UNIQUE constraint failed.*\[parameters: \('([^']+)'")
 
 SUPERVISOR = 'supervisorctl'
 DHCPD_PROC = 'dhcpd'
+TSHARK_PROC = 'tshark'
+REPORT_SERVICES = ( DHCPD_PROC, )
 
 DEFAULTS = {
     'DhcpSubnet': {
@@ -372,6 +377,7 @@ class DhcpSubnet(db.Model):
             # Compute defaults
             print("Computing defaults for DHCP subnet")
             params = get_subnet_details()
+            record_interface(params['dhcp_interface'])
             entry = klass(**params)
             db.session.add(entry)
             db.session.commit()
@@ -499,7 +505,7 @@ def show_entries():
     onie = OnieInstaller.get()
     ansible = AnsibleConfig.get()
     hostfiles = AnsibleHostsFile.query.order_by(AnsibleHostsFile.filename.desc()).all()
-    services = service_status(('dhcpd',))
+    servstats = service_status(('dhcpd', 'tshark'))
     assets = []
     products = []
     activation_keys = {}
@@ -538,12 +544,19 @@ def show_entries():
     if os.path.isfile(LEASES_FILE):
         dhcp_leases = reversed(IscDhcpLeases(LEASES_FILE).get())
 
+    services = [ x for x in servstats if x['service_id'] in REPORT_SERVICES ]
+    ts = [ x['status'] for x in servstats if x['service_id'] == 'tshark' ]
+    if ts:
+        tshark_status = ts[0]
+    else:
+        tshark_status = 'UNKNOWN'
+
     return render_template('show_entries.html', server=server,
             entries=clients, onie=onie, ansible=ansible, hostfiles=hostfiles,
             assets=assets, products=products, activation_keys=activation_keys,
             activations_by_device_id=activations_by_device_id, onie_installers=onie_installers,
             uploaded=uploaded, current=current, services=services, http_base=http_base,
-            dhcp_leases=dhcp_leases)
+            dhcp_leases=dhcp_leases, tshark_status=tshark_status)
 
 def get_default_interface():
     with open('/proc/net/route') as f:
@@ -611,6 +624,11 @@ def get_subnet_details(interface=None):
                             ipnet.ip, int(os.environ.get('HTTP_PORT', '5000'))),
     }
 
+def record_interface(interface):
+    print("Recording the DHCP interface: {0}".format(interface))
+    with open(DHCP_INTERFACE_NAME, 'w') as f:
+        f.write(interface + "\n")
+
 @application.route('/confsubnet', methods=['POST'])
 def configure_subnet():
     entry = DhcpSubnet.get()
@@ -626,6 +644,7 @@ def configure_subnet():
 
     if request.form['dhcp_interface'] and \
             old_dhcp_interface != request.form['dhcp_interface']:
+        record_interface(request.form['dhcp_interface'])
         print("Computing network parameters for new interface: {0}".format(
                 request.form['dhcp_interface']))
         nparams = get_subnet_details(request.form['dhcp_interface'])
@@ -969,6 +988,7 @@ def service_status(servicelist=()):
         if servicelist and service not in servicelist:
             continue
         services.append({
+            'service_id': service,
             'service': SERVICE_NAME_MAP.get(service, service),
             'status': status,
             'details': details
@@ -1080,6 +1100,18 @@ def launch():
     flash('DHCP/ONIE server launched')
     return redirect(url_for('show_entries', _anchor='dhcp'))
 
+@application.route('/tsharkstart', methods=['GET'])
+def tshark_start():
+    if not supervisor('start', TSHARK_PROC):
+        flash('Failed to start Tshark')
+    return redirect(url_for('show_entries', _anchor='logs'))
+
+@application.route('/tsharkstop', methods=['GET'])
+def tshark_stop():
+    if not supervisor('stop', TSHARK_PROC):
+        flash('Failed to stop Tshark')
+    return redirect(url_for('show_entries', _anchor='logs'))
+
 @application.route('/ansible_do', methods=['GET', 'POST'])
 def ansible():
     if request.method == 'GET':
@@ -1149,6 +1181,14 @@ def log_events():
 
     return render_template('log_events.html', events=reversed(events))
 
+@application.route('/tsharklog', methods=['GET'])
+def tshark_log():
+    log = ''
+    if os.path.isfile(TSHARK_LOG):
+        with open(TSHARK_LOG) as f:
+            log = f.read()
+
+    return render_template('tshark_log.html', log=log)
 
 if __name__ == "__main__":
     application.run(host='0.0.0.0')

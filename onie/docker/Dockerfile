@@ -14,10 +14,11 @@ RUN pip install \
 RUN apt-key adv --keyserver hkp://pgp.mit.edu:80 --recv-keys 573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62 \
         && echo "deb http://nginx.org/packages/mainline/debian/ jessie nginx" >> /etc/apt/sources.list \
 	&& apt-get update \
-	&& apt-get install -y \
+	&& DEBIAN_FRONTEND=noninteractive apt-get --assume-yes install -yq \
 		isc-dhcp-server \
 		nginx=${NGINX_VERSION} \
 		supervisor \
+		tshark \
 	&& rm -rf /var/lib/apt/lists/*
 
 # nginx
@@ -54,6 +55,8 @@ ENV FLASK_APP onie
 ENV FLASK_DEBUG true
 
 RUN flask initdb
+
+COPY ./tshark.sh /
 
 COPY ./run.sh /
 CMD ["/run.sh"]

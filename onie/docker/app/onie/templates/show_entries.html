@@ -52,8 +52,18 @@ function loadLogs() {
     });
 }
 
+function loadTsharkLogs() {
+    $("#tsharkdiv").load("{{ url_for('tshark_log') }}", function(respTxt, statusTxt, xhr) {
+            {% if tshark_status == "RUNNING" %}
+            $("#tsharkdiv").scrollTop($("#tsharkdiv")[0].scrollHeight);
+            setTimeout(loadTsharkLogs, 5000);
+            {% endif %}
+    });
+}
+
 window.onload = function(e) {
   loadLogs();
+  loadTsharkLogs();
 
   hash = window.location.hash.substr(1);
   switch (hash) {
@@ -292,6 +302,7 @@ window.onload = function(e) {
   {% endif %}
   <p/>
   <hr/>
+  FOO{{ tshark_status }}BAR
   {% if services %}
   <h3>Services</h3>
   <table class="thinborder">
@@ -331,9 +342,21 @@ window.onload = function(e) {
 <div id="tab-logs" class="tabcontent">
     <h3>Logs / Troubleshooting</h3>
 
-    <strong>Download Logs</strong>
+    <strong>Download Logs</strong><br/>
     <div id="logdiv" style="overflow: auto; height: 10em; background-color: white;">
     </div>
+    <p/>
+
+    <strong>Tshark Logs</strong>
+    <div id="tsharkdiv" style="overflow: auto; height: 20em; background-color: white;">
+    </div>
+    <br/>
+    {% if tshark_status == "RUNNING" %}
+    <a href="{{ url_for('tshark_stop') }}" class="button-narrow">Stop Tshark</a>
+    {% else %}
+    <a href="{{ url_for('tshark_start') }}" class="button-narrow">Start Tshark</a>
+    {% endif %}
+    <p/>
 
 </div>
 
