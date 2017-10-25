@@ -299,7 +299,10 @@ window.onload = function(e) {
 
     <small><em><strong>Note:</strong> Static DHCP hosts are not listed here.</em></small><p/>
     <table id='tableases' class="thinborder">
+        <thead>
         <tr><th>MAC</th><th>IP</th><th>Lease Start</th><th>Lease End</th><th>Active</th></tr>
+        </thead>
+        <tbody>
         {% for lease in dhcp_leases %}
         <tr><td><strong>{{ lease.ethernet }}</strong></td>
             <td>{{ lease.ip }}</td>
@@ -310,6 +313,7 @@ window.onload = function(e) {
         {% else %}
         <tr><td colspan="5" align="center"><em>No leases</em></td></tr>
         {% endfor %}
+        </tbody>
     </table>
 </div>
 
