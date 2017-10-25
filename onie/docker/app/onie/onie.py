@@ -6,6 +6,8 @@ from netaddr import IPNetwork
 import os
 import re
 import requests
+import socket
+import struct
 import subprocess
 from sqlalchemy import exc
 import sqlite3
@@ -365,38 +367,15 @@ class DhcpSubnet(db.Model):
         else:
             # Compute defaults
             print("Computing defaults for DHCP subnet")
+            params = get_subnet_details()
+            entry = klass(**params)
+            db.session.add(entry)
+            db.session.commit()
 
-            def_intf = None
-            with open('/proc/net/route') as f:
-                for line in f.readlines()[1:]:
-                    (intf, dest, x) = line.split(None, 2)
-                    if dest == '00000000':
-                        def_intf = intf
-                        print("Default gateway interface: {0}".format(def_intf))
-                        break
+            if write_dhcpd_conf():
+                launch()
 
-            if def_intf:
-                ipnet = klass.ip_for_interface(def_intf)
-                subnet = str(ipnet.network)
-                subnet_mask = str(ipnet.netmask)
-                broadcast_address = str(ipnet.broadcast)
-                entry = klass(
-                            dhcp_interface=def_intf,
-                            subnet=subnet,
-                            subnet_mask=subnet_mask,
-                            broadcast_address=broadcast_address,
-                            dhcp_range_start='',
-                            dhcp_range_end='',
-                            dns_primary='',
-                            dns_secondary='',
-                            domain_name='',
-                            gateway='',
-                            default_url='')
-                db.session.add(entry)
-                db.session.commit()
-                print(entry)
-
-                return entry
+            return entry
 
         return None
 
@@ -411,7 +390,9 @@ class DhcpSubnet(db.Model):
             if m:
                 myip = m.group(1)
                 break
-        return IPNetwork(myip)
+        if myip:
+            return IPNetwork(myip)
+        return None
 
     @property
     def server_ip(self):
@@ -555,6 +536,72 @@ def show_entries():
             activations_by_device_id=activations_by_device_id, onie_installers=onie_installers,
             uploaded=uploaded, current=current, services=services, http_base=http_base)
 
+def get_default_interface():
+    with open('/proc/net/route') as f:
+        for line in f.readlines()[1:]:
+            (intf, dest, gateway, x) = line.split(None, 3)
+            if dest == '00000000':
+                gateway = socket.inet_ntoa(struct.pack("<L", int(gateway, 16)))
+                return (intf, gateway)
+    return (None, None)
+
+def get_gateway_for_interface(interface):
+    with open('/proc/net/route') as f:
+        for line in f.readlines()[1:]:
+            (intf, dest, gateway, x) = line.split(None, 3)
+            if intf == interface:
+                return socket.inet_ntoa(struct.pack("<L", int(gateway, 16)))
+    print("Failed to identify gateway for interface {0}".format(interface))
+    return ''
+
+def get_subnet_details(interface=None):
+    if not interface:
+        (interface, gateway) = get_default_interface()
+        if not interface:
+            print("Failed to determine default interface")
+            return {}
+    else:
+        gateway = get_gateway_for_interface(interface)
+
+    ipnet = DhcpSubnet.ip_for_interface(interface)
+    if not ipnet:
+        print("Failed to load network details for interface: {0}".format(interface))
+        return {}
+
+    ip = str(ipnet.ip)
+    subnet = str(ipnet.network)
+    subnet_mask = str(ipnet.netmask)
+    broadcast_address = str(ipnet.broadcast)
+
+    dns_primary = ''
+    dns_secondary = ''
+    domain_name = ''
+    with open('/etc/resolv.conf') as f:
+        for line in f.readlines():
+            if line.startswith('nameserver'):
+                dns = line.split()[1]
+                if not dns_primary:
+                    dns_primary = dns
+                elif not dns_secondary:
+                    dns_secondary = dns
+            elif line.startswith('search'):
+                domain_name = line.split()[1]
+
+    return {
+        'dhcp_interface': interface,
+        'subnet': subnet,
+        'subnet_mask': subnet_mask,
+        'broadcast_address': broadcast_address,
+        'dhcp_range_start': ip,
+        'dhcp_range_end': ip,
+        'dns_primary': dns_primary,
+        'dns_secondary': dns_secondary,
+        'domain_name': domain_name,
+        'gateway': gateway,
+        'default_url': "http://{0}:{1}/images/onie-installer".format(
+                            ipnet.ip, int(os.environ.get('HTTP_PORT', '5000'))),
+    }
+
 @application.route('/confsubnet', methods=['POST'])
 def configure_subnet():
     entry = DhcpSubnet.get()
@@ -570,11 +617,11 @@ def configure_subnet():
 
     if request.form['dhcp_interface'] and \
             old_dhcp_interface != request.form['dhcp_interface']:
-        print("Computing network parameters")
-        ip = DhcpSubnet.ip_for_interface(request.form['dhcp_interface'])
-        params['subnet'] = str(ip.network)
-        params['subnet_mask'] = str(ip.netmask)
-        params['broadcast_address'] = str(ip.broadcast)
+        print("Computing network parameters for new interface: {0}".format(
+                request.form['dhcp_interface']))
+        nparams = get_subnet_details(request.form['dhcp_interface'])
+        for p in nparams:
+            params[p] = nparams[p]
 
     if entry:
         for p in params:
