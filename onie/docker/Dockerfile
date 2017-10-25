@@ -6,6 +6,7 @@ RUN pip install \
 	cryptography \
 	flask \
 	flask_sqlalchemy \
+	isc_dhcp_leases \
 	netaddr \
 	requests \
 	uwsgi

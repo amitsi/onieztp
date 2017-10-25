@@ -2,6 +2,7 @@ from cryptography.fernet import Fernet
 import csv
 import datetime
 import glob
+from isc_dhcp_leases import Lease, IscDhcpLeases
 from netaddr import IPNetwork
 import os
 import re
@@ -53,6 +54,7 @@ PNC_PRODUCTS = 'https://cloud-web.pluribusnetworks.com/api/products'
 ONIE_INSTALLER_RE = re.compile(r'^onie-installer-([\d\.]+)-(\d+)$')
 
 KEYFILE = '/var/tmp/.key'
+LEASES_FILE = '/var/lib/dhcp/dhcpd.leases'
 
 WWW_ROOT = '/var/www/html/images'
 ONIE_INSTALLER_PATH = os.path.join(WWW_ROOT, 'onie-installer')
@@ -530,11 +532,16 @@ def show_entries():
     downloaded = [ x['sw_pid'] for x in products if x['__downloaded'] ]
     uploaded = [ onie_installer_details(x) for x in onie_installers if x not in downloaded ]
 
+    dhcp_leases = []
+    if os.path.isfile(LEASES_FILE):
+        dhcp_leases = reversed(IscDhcpLeases(LEASES_FILE).get())
+
     return render_template('show_entries.html', server=server,
             entries=clients, onie=onie, ansible=ansible, hostfiles=hostfiles,
             assets=assets, products=products, activation_keys=activation_keys,
             activations_by_device_id=activations_by_device_id, onie_installers=onie_installers,
-            uploaded=uploaded, current=current, services=services, http_base=http_base)
+            uploaded=uploaded, current=current, services=services, http_base=http_base,
+            dhcp_leases=dhcp_leases)
 
 def get_default_interface():
     with open('/proc/net/route') as f:
