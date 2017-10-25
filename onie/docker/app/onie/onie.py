@@ -260,16 +260,9 @@ class PnCloud:
                 "device_ids": device_id}
         return self.activate(device)
 
-    def onie_download(self, installer):
+    def onie_download(self, installer, installer_vers):
         if not self.logged_in:
             raise Exception("Not logged in")
-
-        m = re.match(r'onie-installer-(.*)', installer)
-        if m:
-            installer_vers = m.group(1)
-        else:
-            print("Illegal ONIE installer filename: {0}".format(installer))
-            return ''
 
         url = PNC_ONIE_DOWNLOAD_FOR(installer, installer_vers)
         print("Downloading: {0}".format(url))
@@ -943,14 +936,14 @@ def download_activation_key(dtype):
         flash("Error downloading activation key of type '{0}'".format(dtype))
     return redirect(url_for('show_entries', _anchor='pnc'))
 
-@application.route('/downloadonie/<installer>', methods=['GET'])
-def download_onie(installer):
-    print("Downloading ONIE installer: {0}".format(installer))
+@application.route('/downloadonie/<installer>/<version>', methods=['GET'])
+def download_onie(installer, version):
+    print("Downloading ONIE installer: {0} ({1})".format(installer, version))
     download = None
     try:
         pnc = PnCloud.get()
         pnc.login()
-        download = pnc.onie_download(installer)
+        download = pnc.onie_download(installer, version)
     except Exception as e:
         print(e)
         flash("Failed to download ONIE installer")

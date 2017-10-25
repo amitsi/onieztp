@@ -98,7 +98,7 @@ window.onload = function(e) {
     <table class="thinborder">
         <tr><th>Name</th><th>Version</th><th>Status</th><th>Default</th></tr>
     {% for product in products %}
-    <tr><td>{{ product.name }}</td><td>{{ product.version }}</td><td>{% if product.__downloaded %}<a href="{{ http_base }}/images/{{ product.sw_pid }}">available</a>{% else %}<a href="{{ url_for('download_onie', installer=product.sw_pid) }}" class="button-narrow">download from PN Cloud</a>{% endif %}</td><td align="center" valign="center"><input type="radio" name="installer" value="{{ product.sw_pid }}"{% if not product.__downloaded %} disabled{% else %}{% if product.sw_pid == current %} checked{% endif %} onclick="this.form.submit()"{% endif %}></td></tr>
+    <tr><td>{{ product.name }}</td><td>{{ product.version }}</td><td>{% if product.__downloaded %}<a href="{{ http_base }}/images/{{ product.sw_pid }}">available</a>{% else %}<a href="{{ url_for('download_onie', installer=product.sw_pid, version=product.version) }}" class="button-narrow">download from PN Cloud</a>{% endif %}</td><td align="center" valign="center"><input type="radio" name="installer" value="{{ product.sw_pid }}"{% if not product.__downloaded %} disabled{% else %}{% if product.sw_pid == current %} checked{% endif %} onclick="this.form.submit()"{% endif %}></td></tr>
     {% endfor %}
 
     {% for ins in uploaded %}
