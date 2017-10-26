@@ -1178,11 +1178,12 @@ def ansible_hosts():
 @application.route('/logevents', methods=['GET'])
 def log_events():
     events = []
-    with open(NGINX_ACCESS_LOG) as f:
-        for line in f.readlines():
-            m = NGINX_ACCESS_LOG_RE.search(line)
-            if m:
-                events.append(m.groupdict())
+    if os.path.isfile(NGINX_ACCESS_LOG):
+        with open(NGINX_ACCESS_LOG) as f:
+            for line in f.readlines():
+                m = NGINX_ACCESS_LOG_RE.search(line)
+                if m:
+                    events.append(m.groupdict())
 
     return render_template('log_events.html', events=reversed(events))
 
