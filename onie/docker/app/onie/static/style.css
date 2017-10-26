@@ -218,3 +218,7 @@ table.thinborder td, table.thinborder th {
   top: 0;
   opacity: 0;
 }
+
+.inputtext {
+    width: 400px;
+}

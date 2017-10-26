@@ -115,8 +115,8 @@ window.onload = function(e) {
     <p/>
     <form action="{{ url_for('configure_onie') }}" method=post class="add-entry">
       <table>
-        <tr><th>PN Cloud Username:</th><td><input type="text" size="40" name="username" value="{{ onie.username }}" placeholder="user@example.com"/> <em>Username of the Pluribus Networks cloud account</em></td></tr>
-        <tr><th>PN Cloud Password:</th><td><input type="password" size="40" name="password" placeholder="{% if onie.password %}password set{% endif %}"/><em>Password of the Pluribus Networks cloud account</em></td></tr>
+        <tr><th>PN Cloud Username:</th><td><input type="text" class="inputtext" name="username" value="{{ onie.username }}" placeholder="user@example.com"/> <em>Username of the Pluribus Networks cloud account</em></td></tr>
+        <tr><th>PN Cloud Password:</th><td><input type="password" class="inputtext" name="password" placeholder="{% if onie.password %}password set{% endif %}"/> <em>Password of the Pluribus Networks cloud account</em></td></tr>
         <tr><td/><td><input type="submit" value="Set"/></td></tr>
       </table>
     </form>
@@ -199,8 +199,8 @@ window.onload = function(e) {
     <p/>
     <form action="{{ url_for('configure_ansible') }}" method=post class="add-entry">
       <table>
-        <tr><th>SSH Username:</th><td><input type="text" size="40" name="ssh_user" value="{{ ansible.ssh_user or 'network-admin' }}" placeholder="network-admin"/> <em>Username Ansible will use to login to the host</em></td></tr>
-        <tr><th>SSH Password:</th><td><input type="password" size="40" name="ssh_pass" placeholder="{% if ansible.ssh_pass %}password set{% endif %}"/> <em>Password of the account Ansible will use to login to the host</em></td></tr>
+        <tr><th>SSH Username:</th><td><input type="text" class="inputtext" name="ssh_user" value="{{ ansible.ssh_user or 'network-admin' }}" placeholder="network-admin"/> <em>Username Ansible will use to login to the host</em></td></tr>
+        <tr><th>SSH Password:</th><td><input type="password" class="inputtext" name="ssh_pass" placeholder="{% if ansible.ssh_pass %}password set{% endif %}"/> <em>Password of the account Ansible will use to login to the host</em></td></tr>
         <tr><td/><td><input type="submit" value="Set"/></td></tr>
       </table>
     </form>
@@ -243,19 +243,19 @@ window.onload = function(e) {
     <h3>Configure the DHCP subnet</h3>
     <form action="{{ url_for('configure_subnet') }}" method=post class="add-entry">
       <table>
-        <tr><th>DHCP Interface</th><td><input type="text" size="40" name="dhcp_interface" value="{{ server.dhcp_interface }}" placeholder="eth0"/> <em>Interface the DHCP server should be listening on</em>
+        <tr><th>DHCP Interface</th><td><input type="text" class="inputtext" name="dhcp_interface" value="{{ server.dhcp_interface }}" placeholder="eth0"/> <em>Interface the DHCP server should be listening on</em>
             {% if server.server_ip %}<br/><small><strong>Server IP: {{ server.server_ip.ip }}</strong></small>{% endif %}
             </td></tr>
-        <tr><th>Subnet:</th><td><input type="text" size="40" name="subnet" value="{{ server.subnet }}" placeholder="10.9.0.0"/> <em>The subnet the DHCP server will be servicing</em></td></tr>
-        <tr><th>Subnet Mask:</th><td><input type="text" size="40" name="subnet_mask" value="{{ server.subnet_mask }}" placeholder="255.255.0.0"/> <em>The subnet mask of the DHCP subnet</em></td></tr>
-        <tr><th>Broadcast Address:</th><td><input type="text" size="40" name="broadcast_address" value="{{ server.broadcast_address }}" placeholder="10.9.255.255"/> <em>Broadcast address for the subnet</em></td></tr>
-        <tr><th>DHCP Range Start:</th><td><input type="text" size="40" name="dhcp_range_start" value="{{ server.dhcp_range_start }}" placeholder="10.9.31.142"/> <em>The first IP of DHCP range</em></td></tr>
-        <tr><th>DHCP Range End:</th><td><input type="text" size="40" name="dhcp_range_end" value="{{ server.dhcp_range_end }}" placeholder="10.9.31.149"/> <em>The last IP of the DHCP range</em></td></tr>
-        <tr><th>Primary DNS:</th><td><input type="text" size="40" name="dns_primary" value="{{ server.dns_primary }}" placeholder="10.9.10.1"/> <em>The primary DNS server to be configured on the hosts</em></td></tr>
-        <tr><th>Secondary DNS:</th><td><input type="text" size="40" name="dns_secondary" value="{{ server.dns_secondary }}" placeholder="10.20.4.1"/> <em>The secondary DNS server to be configured on the hosts</em></td></tr>
-        <tr><th>Domain Name:</th><td><input type="text" size="40" name="domain_name" value="{{ server.domain_name }}" placeholder="pluribusnetworks.com"/> <em>The domain name to be configured on the hosts</em></td></tr>
-        <tr><th>Gateway:</th><td><input type="text" size="40" name="gateway" value="{{ server.gateway }}" placeholder="10.9.9.1"/> <em>The default gateway to be configueed on the hosts</em></td></tr>
-        <tr><th>Default URL:</th><td><input type="text" size="40" name="default_url" value="{{ server.default_url }}" placeholder="http://{% if server.server_ip %}{{ server.server_ip.ip }}{% else %}10.9.10.127{% endif %}:{{ server.server_port or '4000' }}/images/onie-installer"><em> The URL of the default ONIE installer</em></td></tr>
+        <tr><th>Subnet:</th><td><input type="text" class="inputtext" name="subnet" value="{{ server.subnet }}" placeholder="10.9.0.0"/> <em>The subnet the DHCP server will be servicing</em></td></tr>
+        <tr><th>Subnet Mask:</th><td><input type="text" class="inputtext" name="subnet_mask" value="{{ server.subnet_mask }}" placeholder="255.255.0.0"/> <em>The subnet mask of the DHCP subnet</em></td></tr>
+        <tr><th>Broadcast Address:</th><td><input type="text" class="inputtext" name="broadcast_address" value="{{ server.broadcast_address }}" placeholder="10.9.255.255"/> <em>Broadcast address for the subnet</em></td></tr>
+        <tr><th>DHCP Range Start:</th><td><input type="text" class="inputtext" name="dhcp_range_start" value="{{ server.dhcp_range_start }}" placeholder="10.9.31.142"/> <em>The first IP of DHCP range</em></td></tr>
+        <tr><th>DHCP Range End:</th><td><input type="text" class="inputtext" name="dhcp_range_end" value="{{ server.dhcp_range_end }}" placeholder="10.9.31.149"/> <em>The last IP of the DHCP range</em></td></tr>
+        <tr><th>Primary DNS:</th><td><input type="text" class="inputtext" name="dns_primary" value="{{ server.dns_primary }}" placeholder="10.9.10.1"/> <em>The primary DNS server to be configured on the hosts</em></td></tr>
+        <tr><th>Secondary DNS:</th><td><input type="text" class="inputtext" name="dns_secondary" value="{{ server.dns_secondary }}" placeholder="10.20.4.1"/> <em>The secondary DNS server to be configured on the hosts</em></td></tr>
+        <tr><th>Domain Name:</th><td><input type="text" class="inputtext" name="domain_name" value="{{ server.domain_name }}" placeholder="pluribusnetworks.com"/> <em>The domain name to be configured on the hosts</em></td></tr>
+        <tr><th>Gateway:</th><td><input type="text" class="inputtext" name="gateway" value="{{ server.gateway }}" placeholder="10.9.9.1"/> <em>The default gateway to be configueed on the hosts</em></td></tr>
+        <tr><th>Default URL:</th><td><input type="text" class="inputtext" name="default_url" value="{{ server.default_url }}" placeholder="http://{% if server.server_ip %}{{ server.server_ip.ip }}{% else %}10.9.10.127{% endif %}:{{ server.server_port or '4000' }}/images/onie-installer"><em> The URL of the default ONIE installer</em></td></tr>
         <tr><td/><td><input type="submit" value="Set"/></td></tr>
       </table>
     </form>
@@ -263,12 +263,12 @@ window.onload = function(e) {
     <h3>Add a DHCP Host Entry</h3>
     <form action="{{ url_for('add_entry') }}" method=post class=add-entry>
       <table>
-        <tr><th>Hostname:</th><td><input type="text" size="40" name="hostname" placeholder="switch1"/> <em>This will become the hostname of the switch</em></td></tr>
-        <tr><th>IP:</th><td><input type="text" size="40" name="ip" placeholder="10.9.31.214"/> <em>This will become the IP address of the switch</em></td></tr>
-        <tr><th>MAC:</th><td><input type="text" size="40" name="mac" placeholder="8C:EA:1B:36:FF:FF"/> <em>This should be the system MAC of the switch</em></td></tr>
-        <tr><th>Device ID:</th><td><input type="text" size="40" name="device_id" placeholder="638064ffffff"/> <em>Should be in order receipt or nvplatform on shell</em></td></tr>
-        <tr><th>Device Type:</th><td><input type="text" size="40" name="device_type" placeholder="40g"/> <em>Specify if it is 40g or 10g or 100g platform</em></td></tr>
-        <tr><th>Default URL:</th><td><input type="text" size="40" name="default_url" placeholder="http://{% if server.server_ip %}{{ server.server_ip.ip }}{% else %}10.9.10.127{% endif %}:{{ server.server_port or '4000' }}/images/onie-installer"/> <em>Default URL will be selected; change to modify</em></td></tr>
+        <tr><th>Hostname:</th><td><input type="text" class="inputtext" name="hostname" placeholder="switch1"/> <em>This will become the hostname of the switch</em></td></tr>
+        <tr><th>IP:</th><td><input type="text" class="inputtext" name="ip" placeholder="10.9.31.214"/> <em>This will become the IP address of the switch</em></td></tr>
+        <tr><th>MAC:</th><td><input type="text" class="inputtext" name="mac" placeholder="8C:EA:1B:36:FF:FF"/> <em>This should be the system MAC of the switch</em></td></tr>
+        <tr><th>Device ID:</th><td><input type="text" class="inputtext" name="device_id" placeholder="638064ffffff"/> <em>Should be in order receipt or nvplatform on shell</em></td></tr>
+        <tr><th>Device Type:</th><td><input type="text" class="inputtext" name="device_type" placeholder="40g"/> <em>Specify if it is 40g or 10g or 100g platform</em></td></tr>
+        <tr><th>Default URL:</th><td><input type="text" class="inputtext" name="default_url" placeholder="http://{% if server.server_ip %}{{ server.server_ip.ip }}{% else %}10.9.10.127{% endif %}:{{ server.server_port or '4000' }}/images/onie-installer"/> <em>Default URL will be selected; change to modify</em></td></tr>
         <tr><td/><td><input type="submit" value="Add"/></td></tr>
       </table>
     </form>
@@ -302,7 +302,6 @@ window.onload = function(e) {
   {% endif %}
   <p/>
   <hr/>
-  FOO{{ tshark_status }}BAR
   {% if services %}
   <h3>Services</h3>
   <table class="thinborder">
@@ -317,7 +316,7 @@ window.onload = function(e) {
 </div>
 
 <div id="tab-leases" class="tabcontent">
-    <h3>Configure PN Cloud Details</h3>
+    <h3>DHCP Leases</h3>
 
     <small><em><strong>Note:</strong> Static DHCP hosts are not listed here.</em></small><p/>
     <table id='tableases' class="thinborder">
