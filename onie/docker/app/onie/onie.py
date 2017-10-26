@@ -891,6 +891,10 @@ def import_csv():
             return redirect(url_for('show_entries', _anchor='dhcp'))
 
         flash("CSV file imported")
+
+        if write_dhcpd_conf():
+            launch()
+
         return redirect(url_for('show_entries', _anchor='dhcp'))
     else:
         return render_template("import_csv.html")
