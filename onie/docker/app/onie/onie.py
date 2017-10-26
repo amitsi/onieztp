@@ -29,7 +29,7 @@ requests.packages.urllib3.disable_warnings() # FIXME
 
 # Load default config and override config from an environment variable
 application.config.update(dict(
-    SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(application.root_path, 'onie.db'),
+    SQLALCHEMY_DATABASE_URI='sqlite:////ztpvol/onie.db',
     SQLALCHEMY_TRACK_MODIFICATIONS=True,
     SECRET_KEY='secret',
     USERNAME='admin',
@@ -54,7 +54,7 @@ PNC_PRODUCTS = 'https://cloud-web.pluribusnetworks.com/api/products'
 ONIE_INSTALLER_RE = re.compile(r'^onie-installer-([\d\.]+)-(\d+)$')
 NGINX_ACCESS_LOG_RE = re.compile(r'(?P<ip>[\d\.]+) - - \[(?P<datetime>[^\]]+)\] "(?P<verb>\w+) (?P<url>/images/..*?) HTTP/[\d\.]+" (?P<statuscode>\d+) (?P<bytes>\d+)')
 
-KEYFILE = '/var/tmp/.key'
+KEYFILE = '/ztpvol/.key'
 LEASES_FILE = '/var/lib/dhcp/dhcpd.leases'
 NGINX_ACCESS_LOG = '/var/log/nginx/access.log'
 TSHARK_LOG = '/var/log/tshark.log'

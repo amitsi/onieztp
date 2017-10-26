@@ -15,8 +15,10 @@ docker build -t pluribus-onie-ztp 'https://github.com/amitsi/onieztp.git#:onie/d
 ## Run the image
 
 ```sh
-docker run --net=host --cap-add net_raw --cap-add net_admin pluribus-onie-ztp
+docker run --name pluribus-onie-ztp --net=host --cap-add net_raw --cap-add net_admin --mount source=ztpvol,target=/ztpvol pluribus-onie-ztp
 ```
+
+This will create a volume named "ztpvol" for storage of persistent data.
 
 **NOTE**: On macOS, the `--net=host` parameter is ignored.  You can check the web interface by explicitly mapping ports using the following command, but _DHCP won't work_:
 
@@ -30,7 +32,7 @@ Open the webpage by navigating to http://localhost:4000
 HTTP_PORT environment variable to the run command:*
 
 ```sh
-docker run --name pluribus-onie-ztp --net=host --cap-add net_raw --cap-add net_admin -e HTTP_PORT=4050 pluribus-onie-ztp
+docker run --name pluribus-onie-ztp --net=host --cap-add net_raw --cap-add net_admin --mount source=ztpvol,target=/ztpvol -e HTTP_PORT=4050 pluribus-onie-ztp
 ```
 
 After the container is started, `docker start` and `docker stop` can be used to shutdown and boot up the container.
