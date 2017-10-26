@@ -716,7 +716,8 @@ def add_entry():
                            mac=request.form['mac'],
                            device_id=request.form['device_id'],
                            device_type=request.form['device_type'],
-                           default_url=request.form['default_url'])
+                           default_url=request.form['default_url'],
+                           tag='leaf')
         db.session.add(entry)
         db.session.commit()
     except Exception as e:
