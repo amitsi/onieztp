@@ -11,7 +11,9 @@ echo "INTERFACES='${DHCP_INTERFACE}'" >/etc/default/isc-dhcp-server
 INITDB_FLAG='/ztpvol/initdb'
 
 if [ -e "$INITDB_FLAG" ]; then
+    # Newly created database -- no migration necessary
     rm -f "$INITDB_FLAG"
+    (cd /app/onie && FLASK_APP=onie flask db stamp)
 else
     echo "Upgrading database schema"
     (cd /app/onie && FLASK_APP=onie flask db upgrade)
