@@ -17,6 +17,7 @@ import time
 from flask import Flask, Response, request, session, g, redirect, url_for, abort, \
      render_template, flash
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 
 DEBUG = os.environ.get('FLASK_DEBUG', False)
 if DEBUG == 'false':
@@ -38,6 +39,7 @@ application.config.update(dict(
 ))
 application.config.from_envvar('ONIE_SETTINGS', silent=True)
 db = SQLAlchemy(application)
+migrate = Migrate(application, db)
 
 #
 # UTILS

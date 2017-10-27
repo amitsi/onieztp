@@ -5,6 +5,7 @@ ENV NGINX_VERSION 1.13.5-2~jessie
 RUN pip install \
 	cryptography \
 	flask \
+	flask-migrate \
 	flask_sqlalchemy \
 	isc_dhcp_leases \
 	netaddr \
@@ -57,6 +58,7 @@ ENV FLASK_APP onie
 ENV FLASK_DEBUG true
 
 RUN flask initdb
+RUN flask db upgrade
 
 COPY ./tshark.sh /
 
