@@ -92,26 +92,6 @@ DHCPD_PROC = 'dhcpd'
 TSHARK_PROC = 'tshark'
 REPORT_SERVICES = ( DHCPD_PROC, )
 
-DEFAULTS = {
-    'DhcpSubnet': {
-        'subnet': '10.9.0.0',
-        'subnet_mask': '255.255.0.0',
-        'dhcp_interface': 'eth0',
-        'dhcp_range_start': '10.9.31.142',
-        'dhcp_range_end': '10.9.31.149',
-        'dns_primary': '10.9.10.1',
-        'dns_secondary': '10.20.4.1',
-        'domain_name': 'pluribusnetworks.com',
-        'gateway': '10.9.9.1',
-        'broadcast_address': '10.9.255.255',
-    },
-    'OnieInstaller': {
-        'onie_version': '2.6.1-2060112059',
-    },
-    'DhcpClient': [
-    ],
-}
-
 class PnCloud:
     __instance = None
 
@@ -129,10 +109,10 @@ class PnCloud:
             klass.__instance = klass()
         return klass.__instance
 
-    def get_onie_details(self):
-        onie = OnieInstaller.query.all()
-        if onie:
-            return onie[0]
+    def get_pnc_account_details(self):
+        pnca = PnCloudAccount.query.all()
+        if pnca:
+            return pnca[0]
         else:
             return None
 
@@ -169,12 +149,12 @@ class PnCloud:
 
         if not self.logged_in:
             print("Logging in to PN cloud")
-            onie = self.get_onie_details()
-            if not onie:
+            pnca = self.get_pnc_account_details()
+            if not pnca:
                 print("PN cloud details not configured")
                 return False
 
-            data = {"login_email": onie.username, "login_password": decrypt_password(onie.password)}
+            data = {"login_email": pnca.username, "login_password": decrypt_password(pnca.password)}
             resp = self._api_post(PNC_LOGIN, data)
             self.logged_in = resp.get('success', False)
             if self.logged_in:
@@ -186,7 +166,7 @@ class PnCloud:
             print("Logged in as user: {0} ({1})".format(self.username,
                 self.full_name))
         else:
-            print("Failed to log in as user: {0}".format(onie.username))
+            print("Failed to log in as user: {0}".format(pnca.username))
 
         return self.logged_in
 
@@ -443,7 +423,7 @@ class DhcpSubnet(db.Model):
             return self.default_url
         return "http://{0}:{1}/images/onie-installer".format(self.server_ip.ip, self.server_port)
 
-class OnieInstaller(db.Model):
+class PnCloudAccount(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     onie_version = db.Column(db.String(40), nullable=True)
     username = db.Column(db.String(40), nullable=True)
@@ -504,7 +484,7 @@ def onie_installer_details(installer):
 def show_entries():
     server = DhcpSubnet.get()
     clients = DhcpClient.query.order_by(DhcpClient.hostname).all()
-    onie = OnieInstaller.get()
+    pnca = PnCloudAccount.get()
     ansible = AnsibleConfig.get()
     hostfiles = AnsibleHostsFile.query.order_by(AnsibleHostsFile.filename.desc()).all()
     servstats = service_status(('dhcpd', 'tshark'))
@@ -536,8 +516,8 @@ def show_entries():
         for det in pnc.order_details():
             for a in det['order_activations']:
                 activations_by_device_id[a['device_id']] = True
-    elif onie and onie.username and onie.password:
-        flash("Failed to log in to PN Cloud as user \"{0}\"".format(onie.username))
+    elif pnca and pnca.username and pnca.password:
+        flash("Failed to log in to PN Cloud as user \"{0}\"".format(pnca.username))
 
     downloaded = [ x['sw_pid'] for x in products if x['__downloaded'] ]
     uploaded = [ onie_installer_details(x) for x in onie_installers if x not in downloaded ]
@@ -554,7 +534,7 @@ def show_entries():
         tshark_status = 'UNKNOWN'
 
     return render_template('show_entries.html', server=server,
-            entries=clients, onie=onie, ansible=ansible, hostfiles=hostfiles,
+            entries=clients, pnca=pnca, ansible=ansible, hostfiles=hostfiles,
             assets=assets, products=products, activation_keys=activation_keys,
             activations_by_device_id=activations_by_device_id, onie_installers=onie_installers,
             uploaded=uploaded, current=current, services=services, http_base=http_base,
@@ -671,7 +651,7 @@ def configure_subnet():
 
 @application.route('/onie', methods=['POST'])
 def configure_onie():
-    entry = OnieInstaller.get()
+    entry = PnCloudAccount.get()
     username = request.form['username']
     password = encrypt_password(request.form['password'])
     if entry:
@@ -680,7 +660,7 @@ def configure_onie():
         if request.form['password']:
             entry.password = password
     else:
-        entry = OnieInstaller(username=username, password=password)
+        entry = PnCloudAccount(username=username, password=password)
         db.session.add(entry)
 
     db.session.commit()
@@ -1093,7 +1073,7 @@ def set_default_onie():
 
 @application.route('/launch', methods=['GET'])
 def launch():
-    onie = OnieInstaller.get()
+    pnca = PnCloudAccount.get()
     offline_install = True
 
     if not write_dhcpd_conf():

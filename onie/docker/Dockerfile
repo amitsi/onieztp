@@ -58,7 +58,7 @@ ENV FLASK_APP onie
 ENV FLASK_DEBUG true
 
 RUN flask initdb
-RUN flask db upgrade
+RUN touch /ztpvol/initdb
 
 COPY ./tshark.sh /
 
