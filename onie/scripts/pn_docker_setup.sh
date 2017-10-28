@@ -1,11 +1,35 @@
 #!/bin/sh
 
-if [ -z "$1" ]
-  then
-	echo "Usage: $0 <port_num>"
+CONT_NAME="pluribus-onie-ztp"
+IMG_NAME="pluribus-onie-ztp"
+DOCK_GIT="https://github.com/amitsi/onieztp.git#:onie/docker"
+VOL_NAME="ztpvol"
+
+usage="script usage: $(basename $0) [-p <port-num>] [-u] [-h]"
+
+while getopts 'up:' OPTION; do
+  case "$OPTION" in
+    u)
+	UPGRADE=1
+	;;
+
+    p)
+	HTTP_PORT="$OPTARG"
+	echo "The value provided is $OPTARG"
+	;;
+
+    ?)
+	echo "$usage"
 	exit 1
-  fi
-HTTP_PORT=$1
+	;;
+  esac
+done
+shift "$(($OPTIND -1))"
+
+if [ -z "$HTTP_PORT" ]; then
+	echo "$usage"
+	exit 1
+fi
 
 SCRIPT_COMMIT_SHA=490beaa
 
@@ -514,37 +538,88 @@ do_install() {
 	exit 1
 }
 
-get_latest_pn_onie_img() {
-	if [ ! "$(docker images -q pluribus-onie-ztp 2> /dev/null)" ]; then
-		echo "=============================================================================================="
-		echo "Fetching pluribus onie docker image from https://github.com/amitsi/onieztp.git#:onie/docker"
-		echo "=============================================================================================="
-		docker build -t pluribus-onie-ztp 'https://github.com/amitsi/onieztp.git#:onie/docker'
-	fi
-}
-
-run_docker_img() {
-	if [ ! "$(docker ps -a | grep pluribus-onie-ztp)" ]; then
-		echo "=============================================================================================="
-		echo "Starting docker container: pluribus-onie-ztp on port $HTTP_PORT"
-		echo "=============================================================================================="
-		docker run -d --restart always --name pluribus-onie-ztp --net=host -e HTTP_PORT=$HTTP_PORT pluribus-onie-ztp
-	fi
+printout() {
+	echo ">>> $@"
 }
 
 show_onie_access_page() {
-	ipaddr=$(docker exec -i pluribus-onie-ztp sh -c "ip addr show | grep 'inet ' | grep global | grep -v docker | grep -oP 'inet \K\S+' | cut -d/ -f1")
-	echo "========================================================================="
-	echo "To Access Pluribus ZTP ONIE Server go to : http://$ipaddr:$HTTP_PORT"
-	echo "========================================================================="
+	ipaddr=$(docker exec -i $CONT_NAME sh -c "ip addr show | grep 'inet ' \
+            | grep global | grep -v docker | grep -oP 'inet \K\S+' \
+	    | cut -d/ -f1")
+	printout "To Access Pluribus ZTP ONIE Server go to: https://$ipaddr:$HTTP_PORT"
+}
+
+image_exists() {
+	docker images -q $IMG_NAME 2>/dev/null
+}
+
+cont_running() {
+	docker ps -a | grep $CONT_NAME 2>/dev/null
+}
+
+build_ztp_onie() {
+	docker build -t $IMG_NAME $DOCK_GIT
+}
+
+rm_ztp_onie() {
+	docker stop $CONT_NAME
+	docker rm $CONT_NAME
+}
+
+run_ztp_onie() {
+	docker run -d --restart always --name $CONT_NAME \
+	    --net=host --cap-add net_raw --cap-add net_admin \
+	    --mount source=$VOL_NAME,target=/$VOL_NAME \
+	    -e HTTP_PORT=$HTTP_PORT $IMG_NAME
+}
+
+ztp_vol_exists() {
+	docker volume inspect $VOL_NAME 2>/dev/null
 }
 
 # wrapped up in a function so that we have some protection against only getting
 # half the file during "curl | sh"
-do_install
+if [ -z "$UPGRADE" ]; then
+	do_install
 
-get_latest_pn_onie_img
+	if [ ! "$(image_exists)" ]; then
+		printout "Fetching pluribus onie docker image from $DOCK_GIT..."
+		build_ztp_onie
+	fi
 
-run_docker_img
+	if [ ! "$(cont_running)" ]; then
+		printout "Starting docker container $CONT_NAME on port $HTTP_PORT..."
+		run_ztp_onie
+	fi
 
-show_onie_access_page
+	show_onie_access_page
+else
+	CONTAINERID=$(docker ps -aqf "name=$CONT_NAME")
+	if [ ! "$CONTAINERID" ]; then
+		printout "Unable find existing container: $CONT_NAME"
+		exit 1
+	fi
+
+	ztp_vol_exists
+	if [ $? -ne 0 ]; then
+		printout "Moving to docker based volume storage..."
+		mkdir -p ztpvoldata && cd ztpvoldata
+		for src in /var/www/html /var/log/nginx /var/tmp/.key /app/onie/onie.db; do
+		    docker cp ${CONTAINERID}:${src} $( basename $src )
+		done
+
+		printout "Creating new volume: $VOL_NAME"
+		docker volume create $VOL_NAME
+
+		printout "Copying ztp-onie data to new volume"
+		docker run -it -v $PWD:/from -v $VOL_NAME:/to $CONT_NAME \
+		    cp -rv /from/{html,nginx,onie.db,.key} /to
+	fi
+
+	printout "Upgrading pluribus onie docker image from $DOCK_GIT..."
+	build_ztp_onie
+	printout "Upgrading docker container $CONT_NAME..."
+	rm_ztp_onie
+	run_ztp_onie
+	show_onie_access_page
+fi
