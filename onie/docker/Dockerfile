@@ -2,15 +2,8 @@ FROM python:3
 
 ENV NGINX_VERSION 1.13.5-2~jessie
 
-RUN pip install \
-	cryptography \
-	flask \
-	flask-migrate \
-	flask_sqlalchemy \
-	isc_dhcp_leases \
-	netaddr \
-	requests \
-	uwsgi
+COPY requirements.txt /tmp/
+RUN pip install --requirement /tmp/requirements.txt
 
 RUN apt-key adv --keyserver hkp://pgp.mit.edu:80 --recv-keys 573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62 \
         && echo "deb http://nginx.org/packages/mainline/debian/ jessie nginx" >> /etc/apt/sources.list \
