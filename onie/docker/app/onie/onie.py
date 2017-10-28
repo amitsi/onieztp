@@ -1,3 +1,4 @@
+import click
 from cryptography.fernet import Fernet
 import csv
 import datetime
@@ -364,7 +365,7 @@ class DhcpSubnet(db.Model):
             db.session.add(entry)
             db.session.commit()
 
-            if write_dhcpd_conf():
+            if request and write_dhcpd_conf():
                 launch()
 
             return entry
@@ -971,7 +972,10 @@ def service_status(servicelist=()):
     (stdout, stderr) = p.communicate()
     services = []
     for line in stdout.splitlines():
-        (service, status, details) = line.decode('ascii').split(None, 2)
+        try:
+            (service, status, details) = line.decode('ascii').split(None, 2)
+        except:
+            continue
         if servicelist and service not in servicelist:
             continue
         services.append({
@@ -1177,6 +1181,29 @@ def tshark_log():
             log = f.read()
 
     return render_template('tshark_log.html', log=log)
+
+@application.cli.command()
+def dhcpsetup():
+    """Launches the DHCP service"""
+    subnet = DhcpSubnet.get()
+    if subnet.dhcp_interface and not os.path.isfile(DHCP_INTERFACE_NAME):
+        click.echo("Recording DHCP interface")
+        record_interface(subnet.dhcp_interface)
+
+    running = True
+    for x in range(10):
+        status = service_status((DHCPD_PROC,))
+        if status:
+            running = (status[0]['status'] == 'RUNNING')
+            break
+        time.sleep(1)
+
+    if not running:
+        if write_dhcpd_conf():
+            click.echo("Starting DHCP service")
+            supervisor('start', DHCPD_PROC)
+        else:
+            click.echo("Failed to generate DHCP config")
 
 if __name__ == "__main__":
     application.run(host='0.0.0.0')
