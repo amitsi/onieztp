@@ -16,7 +16,7 @@ import sqlite3
 import time
 
 from flask import Flask, Response, request, session, g, redirect, url_for, abort, \
-     render_template, flash
+     render_template, flash, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
@@ -62,6 +62,9 @@ LEASES_FILE = '/var/lib/dhcp/dhcpd.leases'
 NGINX_ACCESS_LOG = '/var/log/nginx/access.log'
 TSHARK_LOG = '/var/log/tshark.log'
 DHCP_INTERFACE_NAME = '/var/run/dhcp_interface'
+TECH_SUPPORT_ARCHIVER = '/tech-support-archive.sh'
+TECH_SUPPORT_ARCHIVE_DIR = '/ztpvol/html/images/tech-support-bundles'
+TECH_SUPPORT_ARCHIVE_RE = re.compile(r'^ARCHIVE=(.*)')
 
 WWW_ROOT = '/var/www/html/images'
 ONIE_INSTALLER_PATH = os.path.join(WWW_ROOT, 'onie-installer')
@@ -1181,6 +1184,24 @@ def tshark_log():
             log = f.read()
 
     return render_template('tshark_log.html', log=log)
+
+@application.route('/techsupport', methods=['GET'])
+def techsupport():
+    p = subprocess.Popen([TECH_SUPPORT_ARCHIVER, TECH_SUPPORT_ARCHIVE_DIR],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    (stdout, stderr) = p.communicate()
+    for line in stdout.splitlines():
+        line = line.decode('ascii')
+        m = TECH_SUPPORT_ARCHIVE_RE.search(line)
+        if m:
+            archive = os.path.join(TECH_SUPPORT_ARCHIVE_DIR,
+                    os.path.basename(m.group(1)))
+            return send_file(archive, as_attachment=True)
+        else:
+            print(line)
+
+    flash("Failed to generate tech support bundle")
+    return redirect(url_for('show_entries', _anchor='logs'))
 
 @application.cli.command()
 def dhcpsetup():

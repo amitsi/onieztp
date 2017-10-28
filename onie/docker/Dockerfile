@@ -31,6 +31,8 @@ RUN mkdir -p html/images nginx \
 	&& ln -sf /ztpvol/nginx/access.log /var/log/nginx/access.log \
 	&& ln -sf /ztpvol/nginx/error.log /var/log/nginx/error.log
 
+RUN touch /var/log/dhcpd.log /var/log/dhcpd.err
+
 RUN echo "daemon off;" >> /etc/nginx/nginx.conf
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY nginx.conf /etc/nginx/conf.d/
@@ -60,6 +62,8 @@ ENV FLASK_DEBUG true
 RUN flask initdb
 RUN flask db init && flask db migrate && flask db upgrade && touch /ztpvol/initdb
 
+COPY ./logcat.sh /
+COPY ./tech-support-archive.sh /
 COPY ./tshark.sh /
 
 COPY ./run.sh /
