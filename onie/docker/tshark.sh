@@ -22,4 +22,6 @@ cleanup() {
 echo "[START] $(date)" >"$OUTFILE"
 trap 'cleanup' EXIT
 
-stdbuf -oL tshark -i "$DHCP_INTF" -f "udp port 67 or port 68" >>"$OUTFILE"
+stdbuf -oL tshark -i "$DHCP_INTF" -f "udp port 67 or port 68" \
+	-o 'gui.column.format:"No.","%m","Time","%t","MAC","%uhs","Source","%s","Destination","%d","Protocol","%p","Length","%L","Info","%i"' \
+	>>"$OUTFILE"
