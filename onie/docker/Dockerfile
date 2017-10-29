@@ -50,7 +50,7 @@ WORKDIR /app
 RUN pip install --editable .
 
 ENV FLASK_APP onie
-ENV FLASK_DEBUG true
+ENV FLASK_DEBUG false
 
 RUN flask initdb
 RUN flask db init && flask db migrate && flask db upgrade && touch /ztpvol/initdb
