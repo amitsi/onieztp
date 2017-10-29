@@ -61,6 +61,7 @@ KEYFILE = '/ztpvol/.key'
 LEASES_FILE = '/var/lib/dhcp/dhcpd.leases'
 NGINX_ACCESS_LOG = '/var/log/nginx/access.log'
 TSHARK_LOG = '/var/log/tshark.log'
+ALL_LOGS = '/var/log/logcatui.log'
 DHCP_INTERFACE_NAME = '/var/run/dhcp_interface'
 TECH_SUPPORT_ARCHIVER = '/tech-support-archive.sh'
 TECH_SUPPORT_ARCHIVE_DIR = '/ztpvol/html/images/tech-support-bundles'
@@ -94,6 +95,7 @@ EX_CSV_IMPORT_DUP_RE = re.compile(r"UNIQUE constraint failed.*\[parameters: \('(
 SUPERVISOR = 'supervisorctl'
 DHCPD_PROC = 'dhcpd'
 TSHARK_PROC = 'tshark'
+LOGCATUI_PROC = 'logcatui'
 REPORT_SERVICES = ( DHCPD_PROC, )
 
 class PnCloud:
@@ -491,7 +493,7 @@ def show_entries():
     pnca = PnCloudAccount.get()
     ansible = AnsibleConfig.get()
     hostfiles = AnsibleHostsFile.query.order_by(AnsibleHostsFile.filename.desc()).all()
-    servstats = service_status(('dhcpd', 'tshark'))
+    servstats = service_status((DHCPD_PROC, TSHARK_PROC, LOGCATUI_PROC))
     assets = []
     products = []
     activation_keys = {}
@@ -531,18 +533,24 @@ def show_entries():
         dhcp_leases = reversed(IscDhcpLeases(LEASES_FILE).get())
 
     services = [ x for x in servstats if x['service_id'] in REPORT_SERVICES ]
-    ts = [ x['status'] for x in servstats if x['service_id'] == 'tshark' ]
+    ts = [ x['status'] for x in servstats if x['service_id'] == TSHARK_PROC ]
     if ts:
         tshark_status = ts[0]
     else:
         tshark_status = 'UNKNOWN'
+
+    lc = [ x['status'] for x in servstats if x['service_id'] == LOGCATUI_PROC ]
+    if lc:
+        logcat_status = lc[0]
+    else:
+        logcat_status = 'UNKNOWN'
 
     return render_template('show_entries.html', server=server,
             entries=clients, pnca=pnca, ansible=ansible, hostfiles=hostfiles,
             assets=assets, products=products, activation_keys=activation_keys,
             activations_by_device_id=activations_by_device_id, onie_installers=onie_installers,
             uploaded=uploaded, current=current, services=services, http_base=http_base,
-            dhcp_leases=dhcp_leases, tshark_status=tshark_status)
+            dhcp_leases=dhcp_leases, tshark_status=tshark_status, logcat_status=logcat_status)
 
 def get_default_interface():
     with open('/proc/net/route') as f:
@@ -1106,6 +1114,18 @@ def tshark_stop():
         flash('Failed to stop Tshark')
     return redirect(url_for('show_entries', _anchor='logs'))
 
+@application.route('/logcatstart', methods=['GET'])
+def logcat_start():
+    if not supervisor('start', LOGCATUI_PROC):
+        flash('Failed to start log display service')
+    return redirect(url_for('show_entries', _anchor='logs'))
+
+@application.route('/logcatstop', methods=['GET'])
+def logcat_stop():
+    if not supervisor('stop', LOGCATUI_PROC):
+        flash('Failed to stop log display service')
+    return redirect(url_for('show_entries', _anchor='logs'))
+
 @application.route('/ansible_do', methods=['GET', 'POST'])
 def ansible():
     if request.method == 'GET':
@@ -1184,6 +1204,19 @@ def tshark_log():
             log = f.read()
 
     return render_template('tshark_log.html', log=log)
+
+@application.route('/alllogs', methods=['GET'])
+def all_logs():
+    log = []
+    skip_re = re.compile(r'GET (?:{0}) '.format('|'.join(
+        [ url_for(x) for x in [ 'all_logs', 'tshark_log', 'log_events' ] ])))
+    if os.path.isfile(ALL_LOGS):
+        with open(ALL_LOGS) as f:
+            for line in f.readlines():
+                if not skip_re.search(line):
+                    log.append(line)
+
+    return render_template('all_logs.html', log="".join(log))
 
 @application.route('/techsupport', methods=['GET'])
 def techsupport():

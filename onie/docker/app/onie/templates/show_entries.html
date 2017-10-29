@@ -61,9 +61,19 @@ function loadTsharkLogs() {
     });
 }
 
+{% if logcat_status == "RUNNING" %}
+function loadAllLogs() {
+    $("#alllogsdiv").load("{{ url_for('all_logs') }}", function(respTxt, statusTxt, xhr) {
+            $("#alllogsdiv").scrollTop($("#alllogsdiv")[0].scrollHeight);
+            setTimeout(loadAllLogs, 5000);
+    });
+}
+{% endif %}
+
 window.onload = function(e) {
   loadLogs();
   loadTsharkLogs();
+  {% if logcat_status == "RUNNING" %}loadAllLogs();{% endif %}
 
   hash = window.location.hash.substr(1);
   switch (hash) {
@@ -344,6 +354,18 @@ window.onload = function(e) {
     <strong>Download Logs</strong><br/>
     <div id="logdiv" style="overflow: auto; height: 10em; background-color: white;">
     </div>
+    <p/>
+
+    <strong>All Logs</strong>
+    {% if logcat_status == "RUNNING" %}
+    <div id="alllogsdiv" style="overflow: auto; height: 30em; background-color: white;">
+    </div>
+    <br/>
+    <a href="{{ url_for('logcat_stop') }}" class="button-narrow">Stop Log Display</a>
+    {% else %}
+    <p/>
+    <a href="{{ url_for('logcat_start') }}" class="button-narrow">Display all Logs</a>
+    {% endif %}
     <p/>
 
     <strong>Tshark Logs</strong>
