@@ -27,6 +27,7 @@ cp  /var/log/dhcpd.log \
     /var/log/supervisord.log \
     .
 cp  -r /var/log/supervisor .
+[[ -f /var/log/tshark.log ]] && cp /var/log/tshark.log .
 
 cd "$BUNDLEDIR"
 cp /ztpvol/onie.db .
@@ -44,9 +45,6 @@ fi
 
 cd "$BUNDLEDIR"
 cp -r /var/lib/dhcp .
-
-cd "$BUNDLEDIR"
-[[ -f /var/log/tshark.log ]] && cp /var/log/tshark.log .
 
 cd "$TMPDIR"
 
