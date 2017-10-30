@@ -317,7 +317,15 @@ window.onload = function(e) {
   <table class="thinborder">
     {% for service in services %}
     <tr><td><span class="{% if service.status == 'RUNNING' %}green{% elif service.status == 'STOPPED' %}none{% else %}red{% endif %}-button"/></td><th>{{ service.service }}</th><td>{{ service.status }}</td><td>{{ service.details }}</td>
-      <td><a href="{{ url_for('launch') }}" class="button">{% if service.status == 'RUNNING' %}restart{% else %}start{% endif %}</a></td></tr>
+      <td>
+          {% if service.status == 'RUNNING' %}
+          <a href="{{ url_for('launch') }}" class="button">restart</a>
+          <a href="{{ url_for('dhcp_stop') }}" class="button">stop</a>
+          {% else %}
+          <a href="{{ url_for('launch') }}" class="button">start</a>
+          {% endif %}
+      </td>
+    </tr>
     {% endfor %}
   </table>
   <p/>

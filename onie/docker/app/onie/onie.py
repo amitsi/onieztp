@@ -1102,6 +1102,14 @@ def launch():
     flash('DHCP/ONIE server launched')
     return redirect(url_for('show_entries', _anchor='dhcp'))
 
+@application.route('/dhcpstop', methods=['GET'])
+def dhcp_stop():
+    if not supervisor('stop', DHCPD_PROC):
+        flash("Failed to stop DHCP service")
+    else:
+        flash("DHCP service stopped")
+    return redirect(url_for('show_entries', _anchor='dhcp'))
+
 @application.route('/tsharkstart', methods=['GET'])
 def tshark_start():
     if not supervisor('start', TSHARK_PROC):
