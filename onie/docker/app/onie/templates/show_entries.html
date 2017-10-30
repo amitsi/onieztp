@@ -215,6 +215,16 @@ window.onload = function(e) {
       </table>
     </form>
 
+    <h3>Set Default Switch Credentials</h3>
+    <p/>
+    <form action="{{ url_for('set_switch_credentials') }}" method=post class="add-entry">
+      <table>
+        <tr><th>Switch Username:</th><td><input type="text" class="inputtext" name="switch_user" value="{{ ansible.switch_user }}"/> <em>Default switch username</em></td></tr>
+        <tr><th>Switch Password:</th><td><input type="password" class="inputtext" name="switch_pass" placeholder="{% if ansible.switch_pass %}password set{% endif %}"/> <em>Default switch password</em></td></tr>
+        <tr><td/><td><input type="submit" value="Set"/></td></tr>
+      </table>
+    </form>
+
   {% if entries %}
   <hr/>
   <ul class=entries>

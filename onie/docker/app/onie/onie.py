@@ -450,6 +450,8 @@ class AnsibleConfig(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     ssh_user = db.Column(db.String(40), nullable=True)
     ssh_pass = db.Column(db.String(40), nullable=True)
+    switch_user = db.Column(db.String(40), nullable=True)
+    switch_pass = db.Column(db.String(40), nullable=True)
 
     @classmethod
     def get(klass):
@@ -461,6 +463,10 @@ class AnsibleConfig(db.Model):
     @property
     def ssh_pass_decrypted(self):
         return decrypt_password(self.ssh_pass)
+
+    @property
+    def switch_pass_decrypted(self):
+        return decrypt_password(self.switch_pass)
 
 class AnsibleHostsFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -706,6 +712,24 @@ def configure_ansible():
 
     db.session.commit()
     flash('Ansible config updated')
+    return redirect(url_for('show_entries', _anchor='ansible'))
+
+@application.route('/switchcreds', methods=['POST'])
+def set_switch_credentials():
+    entry = AnsibleConfig.get()
+    username = request.form['switch_user']
+    password = encrypt_password(request.form['switch_pass'])
+    if entry:
+        if request.form['switch_user']:
+            entry.switch_user = username
+        if request.form['switch_pass']:
+            entry.switch_pass = password
+    else:
+        entry = AnsibleConfig(switch_user=username, switch_pass=password)
+        db.session.add(entry)
+
+    db.session.commit()
+    flash('Switch credentials updated')
     return redirect(url_for('show_entries', _anchor='ansible'))
 
 @application.route('/add', methods=['POST'])
@@ -1275,6 +1299,8 @@ def dhcpsetup():
             click.echo("Failed to generate DHCP config")
 
 def nvos_running(switch, username, password):
+    if not username or not password:
+        return False
     ssh_command = ['sshpass', '-p', password, 'ssh', '-o',
             'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=/dev/null',
             '-o', 'ConnectTimeout=5', '-q',
@@ -1320,6 +1346,15 @@ def _nvos_status(all=False, force=False, debug=False):
             new_clients = True
             cstatus[client.ip] = False
 
+    ansible = AnsibleConfig.get()
+    username = ''
+    password = ''
+    if ansible:
+        if ansible.switch_user:
+            username = ansible.switch_user
+        if ansible.switch_pass:
+            password = ansible.switch_pass_decrypted
+
     if new_clients or cache_stale:
         # Update cache
         if all:
@@ -1330,10 +1365,13 @@ def _nvos_status(all=False, force=False, debug=False):
         for client in check:
             if debug:
                 print("Checking nvOS status on switch: {0}".format(client), file=sys.stderr)
-            cstatus[client] = nvos_running(client, 'root', 'test123')
+            cstatus[client] = nvos_running(client, username, password)
 
-    with open(NVOS_STATUS_CACHE, 'w') as f:
-        f.write(json.dumps(cstatus))
+    if not username or not password:
+        os.remove(NVOS_STATUS_CACHE)
+    else:
+        with open(NVOS_STATUS_CACHE, 'w') as f:
+            f.write(json.dumps(cstatus))
 
     return cstatus
 
