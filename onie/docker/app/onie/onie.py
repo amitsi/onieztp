@@ -1368,7 +1368,8 @@ def _nvos_status(all=False, force=False, debug=False):
             cstatus[client] = nvos_running(client, username, password)
 
     if not username or not password:
-        os.remove(NVOS_STATUS_CACHE)
+        if os.path.isfile(NVOS_STATUS_CACHE):
+            os.remove(NVOS_STATUS_CACHE)
     else:
         with open(NVOS_STATUS_CACHE, 'w') as f:
             f.write(json.dumps(cstatus))
