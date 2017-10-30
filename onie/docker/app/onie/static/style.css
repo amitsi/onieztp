@@ -127,8 +127,8 @@ table.thinborder td, table.thinborder th {
 
 .green-button {
     display:block;
-    width:20px;
-    height:20px;
+    width:16px;
+    height:16px;
     line-height:30px;
     border: 0;
     border-radius: 50%;
@@ -145,8 +145,8 @@ table.thinborder td, table.thinborder th {
 
 .yellow-button {
     display:block;
-    width:20px;
-    height:20px;
+    width:16px;
+    height:16px;
     line-height:30px;
     border: 0;
     border-radius: 50%;
@@ -163,8 +163,8 @@ table.thinborder td, table.thinborder th {
 
 .red-button {
     display:block;
-    width:20px;
-    height:20px;
+    width:16px;
+    height:16px;
     line-height:30px;
     border: 0;
     border-radius: 50%;
@@ -181,8 +181,8 @@ table.thinborder td, table.thinborder th {
 
 .none-button {
     display:block;
-    width:20px;
-    height:20px;
+    width:16px;
+    height:16px;
     line-height:30px;
     border: 1px;
     border-radius: 50%;

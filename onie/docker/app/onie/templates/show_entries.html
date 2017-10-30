@@ -220,13 +220,14 @@ window.onload = function(e) {
   <ul class=entries>
   <form action="{{url_for('ansible') }}" method="post">
   <table class="thinborder">
-    <tr><th/><th>Hostname</th><th>IP</th><th>Leaf</th><th>Spine</th><td/></tr>
+    <tr><th/><th>Hostname</th><th>IP</th><th>Leaf</th><th>Spine</th><th>nvOS Status</th><td/></tr>
   {% for entry in entries %}
     <tr><td><input type="checkbox" name="switch" value="{{ entry.hostname }}"/></td>
         <td>{{ entry.hostname }}</td>
         <td>{{ entry.ip }}</td>
         <td align="center"><input type="radio" name="tag-{{ entry.hostname }}" value="leaf" onclick="showSaveButton(this);"{% if entry.tag == "leaf" %} checked{% endif %}></td>
         <td align="center"><input type="radio" name="tag-{{ entry.hostname }}" value="spine" onclick="showSaveButton(this);"{% if entry.tag == "spine" %} checked{% endif %}></td>
+        <td align="center" valign="center"><span class="{% if entry.ip in nvos_running and nvos_running[entry.ip] %}green{% else %}red{% endif %}-button"/></td>
         <td><a href="{{ url_for('remove_entry', entry_id=entry.id) }}" class="button-narrow">remove</a></td>
     </tr>
   {% endfor %}

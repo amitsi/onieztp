@@ -4,6 +4,7 @@ import csv
 import datetime
 import glob
 from isc_dhcp_leases import Lease, IscDhcpLeases
+import json
 from netaddr import IPNetwork
 import os
 import re
@@ -13,6 +14,7 @@ import struct
 import subprocess
 from sqlalchemy import exc
 import sqlite3
+import sys
 import time
 
 from flask import Flask, Response, request, session, g, redirect, url_for, abort, \
@@ -72,6 +74,8 @@ ONIE_INSTALLER_PATH = os.path.join(WWW_ROOT, 'onie-installer')
 LICENCE_PATH_10G = os.path.join(WWW_ROOT, 'license_10g/onvl-activation-keys')
 LICENCE_PATH_40G = os.path.join(WWW_ROOT, 'license_40g/onvl-activation-keys')
 ANSIBLE_HOSTS_LIST = os.path.join(WWW_ROOT, 'ansible_hosts')
+NVOS_STATUS_CACHE = '/var/run/nvos_status_cache'
+NVOS_STATUS_CACHE_UPDATE_INTERVAL = 180
 
 DEVICE_TYPE_10G = '10g'
 DEVICE_TYPE_40G = '40g'
@@ -545,12 +549,15 @@ def show_entries():
     else:
         logcat_status = 'UNKNOWN'
 
+    nvos_running = _nvos_status()
+
     return render_template('show_entries.html', server=server,
             entries=clients, pnca=pnca, ansible=ansible, hostfiles=hostfiles,
             assets=assets, products=products, activation_keys=activation_keys,
             activations_by_device_id=activations_by_device_id, onie_installers=onie_installers,
             uploaded=uploaded, current=current, services=services, http_base=http_base,
-            dhcp_leases=dhcp_leases, tshark_status=tshark_status, logcat_status=logcat_status)
+            dhcp_leases=dhcp_leases, tshark_status=tshark_status, logcat_status=logcat_status,
+            nvos_running=nvos_running)
 
 def get_default_interface():
     with open('/proc/net/route') as f:
@@ -1266,6 +1273,69 @@ def dhcpsetup():
             supervisor('start', DHCPD_PROC)
         else:
             click.echo("Failed to generate DHCP config")
+
+def nvos_running(switch, username, password):
+    ssh_command = ['sshpass', '-p', password, 'ssh', '-o',
+            'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=/dev/null',
+            '-o', 'ConnectTimeout=5', '-q',
+            username + '@' + switch, 'service', 'svc-nvOSd', 'status']
+    p = subprocess.Popen(ssh_command, stdout=subprocess.PIPE)
+    (stdout, stderr) = p.communicate()
+    if 'online' in stdout.decode('ascii'):
+        return True
+    return False
+
+@application.cli.command()
+@click.option('--all', is_flag=True, help="update status for all switches")
+@click.option('--force', is_flag=True, help="update cache even if not stale")
+@click.option('--quiet', is_flag=True, help="update cache but don't dump details on stdout")
+@click.option('--debug', is_flag=True, help="print debug messages")
+def nvos_status(all, force, quiet, debug):
+    """Return the nvOS service status for configured switches"""
+    cstatus = _nvos_status(all, force, debug)
+    if not quiet:
+        print(json.dumps(cstatus, indent=4, separators=(',', ': ')))
+
+def _nvos_status(all=False, force=False, debug=False):
+    cache_exists = os.path.isfile(NVOS_STATUS_CACHE)
+    cache_stale = True
+    if force or not cache_exists:
+        cache_stale = True
+    elif cache_exists:
+        mtime = os.path.getmtime(NVOS_STATUS_CACHE)
+        if (time.time() - mtime) < NVOS_STATUS_CACHE_UPDATE_INTERVAL:
+            cache_stale = False
+
+    cstatus = {}
+    if cache_exists:
+        with open(NVOS_STATUS_CACHE) as f:
+            data = f.read()
+            if data:
+                cstatus = json.loads(data)
+
+    new_clients = False
+    clients = DhcpClient.query.order_by(DhcpClient.hostname).all()
+    for client in clients:
+        if client.ip not in cstatus:
+            new_clients = True
+            cstatus[client.ip] = False
+
+    if new_clients or cache_stale:
+        # Update cache
+        if all:
+            check = cstatus.keys()
+        else:
+            check = [ x for x in cstatus.keys() if not cstatus[x] ]
+
+        for client in check:
+            if debug:
+                print("Checking nvOS status on switch: {0}".format(client), file=sys.stderr)
+            cstatus[client] = nvos_running(client, 'root', 'test123')
+
+    with open(NVOS_STATUS_CACHE, 'w') as f:
+        f.write(json.dumps(cstatus))
+
+    return cstatus
 
 if __name__ == "__main__":
     application.run(host='0.0.0.0')

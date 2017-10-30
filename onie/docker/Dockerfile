@@ -11,6 +11,7 @@ RUN apt-key adv --keyserver hkp://pgp.mit.edu:80 --recv-keys 573BFD6B3D8FBC64107
 	&& DEBIAN_FRONTEND=noninteractive apt-get --assume-yes install -yq \
 		isc-dhcp-server \
 		nginx=${NGINX_VERSION} \
+		sshpass \
 		supervisor \
 		tshark \
 	&& rm -rf /var/lib/apt/lists/*
@@ -44,6 +45,11 @@ RUN openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem \
 	-subj "/C=US/ST=CA/L=Palo Alto/O=Pluribus Networks/OU=Eng/CN=onie.pluribusnetworks.com" \
 	-days 3650 -nodes
 
+COPY ./logcat.sh /
+COPY ./nvos-status-cache.sh /
+COPY ./tech-support-archive.sh /
+COPY ./tshark.sh /
+
 # Add demo app
 COPY ./app /app
 WORKDIR /app
@@ -54,10 +60,6 @@ ENV FLASK_DEBUG false
 
 RUN flask initdb
 RUN flask db init && flask db migrate && flask db upgrade && touch /ztpvol/initdb
-
-COPY ./logcat.sh /
-COPY ./tech-support-archive.sh /
-COPY ./tshark.sh /
 
 COPY ./run.sh /
 CMD ["/run.sh"]
