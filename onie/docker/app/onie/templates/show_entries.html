@@ -237,7 +237,7 @@ window.onload = function(e) {
         <td>{{ entry.ip }}</td>
         <td align="center"><input type="radio" name="tag-{{ entry.hostname }}" value="leaf" onclick="showSaveButton(this);"{% if entry.tag == "leaf" %} checked{% endif %}></td>
         <td align="center"><input type="radio" name="tag-{{ entry.hostname }}" value="spine" onclick="showSaveButton(this);"{% if entry.tag == "spine" %} checked{% endif %}></td>
-        <td align="center" valign="center"><span class="{% if entry.ip in nvos_running and nvos_running[entry.ip] %}green{% else %}red{% endif %}-button"/></td>
+        <td align="center" valign="center"><span class="{% if not ansible.switch_user or not ansible.switch_pass %}none{% elif entry.ip in nvos_running and nvos_running[entry.ip] %}green{% else %}red{% endif %}-button"/></td>
         <td><a href="{{ url_for('remove_entry', entry_id=entry.id) }}" class="button-narrow">remove</a></td>
     </tr>
   {% endfor %}
