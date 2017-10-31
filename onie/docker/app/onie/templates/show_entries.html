@@ -192,11 +192,15 @@ window.onload = function(e) {
 
     {% if assets %}
     <h3>Assets</h3>
-    <table class="thinborder">
+    <table id="tabassets" class="thinborder">
+    <thead>
         <tr><th>Hardware Model</th><th>Hostname</th><th>Device ID</th><th>IP Address</th><th>Last Connect</th></tr>
+    </thead>
+    <tbody>
     {% for asset in assets %}
-        <tr><td>{{ asset.hwPid }}</td><td>{{ asset.hostname }}</td><td>{{ asset.deviceId }}</td><td>{{ asset.ip }}</td><td>{{ asset.lastConnect }}</td></tr>
+        <tr><td>{{ asset.hwPid or '' }}</td><td>{{ asset.hostname or '' }}</td><td>{{ asset.deviceId or '' }}</td><td>{{ asset.ip or '' }}</td><td>{{ asset.lastConnect or 'Never' }}</td></tr>
     {% endfor %}
+    </tbody>
     </table>
     <p/><hr/>
     {% endif %}
@@ -406,6 +410,7 @@ window.onload = function(e) {
 
 <script>
 $( "#tableases" ).filterTable({minRows: 2});
+$( "#tabassets" ).filterTable({minRows: 2});
 </script>
 
 {% endblock %}
