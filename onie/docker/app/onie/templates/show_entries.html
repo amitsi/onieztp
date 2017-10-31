@@ -194,11 +194,13 @@ window.onload = function(e) {
     <h3>Assets</h3>
     <table id="tabassets" class="thinborder">
     <thead>
-        <tr><th>Hardware Model</th><th>Hostname</th><th>Device ID</th><th>IP Address</th><th>Last Connect</th></tr>
+        <tr><th>Hardware Model</th><th>Hostname</th><th>Device ID</th><th>IP Address</th><th>Last Connect</th><th/></tr>
     </thead>
     <tbody>
     {% for asset in assets %}
-        <tr><td>{{ asset.hwPid or '' }}</td><td>{{ asset.hostname or '' }}</td><td>{{ asset.deviceId or '' }}</td><td>{{ asset.ip or '' }}</td><td>{{ asset.lastConnect or 'Never' }}</td></tr>
+        <tr><td>{{ asset.hwPid or '' }}</td><td>{{ asset.hostname or '' }}</td><td>{{ asset.deviceId or '' }}</td><td>{{ asset.ip or '' }}</td><td>{{ asset.lastConnect or 'Never' }}</td>
+            <td>{% if asset.deviceId and asset.deviceId in activations_by_device_id %}<a href="{{ url_for('deactivate', deviceid=asset.deviceId) }}" class="button-narrow">deactivate</a>{% endif %}</td>
+        </tr>
     {% endfor %}
     </tbody>
     </table>

@@ -52,6 +52,7 @@ PNC_RELOGIN_INTERVAL = 300 # seconds
 PNC_LOGIN = 'https://cloud-web.pluribusnetworks.com/api/login'
 PNC_ORDER_DETAILS = 'https://cloud-web.pluribusnetworks.com/api/orderDetails'
 PNC_ORDER_ACTIVATION = 'https://cloud-web.pluribusnetworks.com/api/orderActivations'
+PNC_ORDER_DEACTIVATION = 'https://cloud-web.pluribusnetworks.com/api/orderActivations/deactivateDevice'
 PNC_ACTIVATION_KEY_FOR = 'https://cloud-web.pluribusnetworks.com/api/offline_bundle/{0}'.format
 PNC_ONIE_DOWNLOAD_FOR = 'https://cloud-web.pluribusnetworks.com/api/download_image1/{0}?version={1}'.format
 PNC_ASSETS = 'https://cloud-web.pluribusnetworks.com/api/assets'
@@ -269,6 +270,35 @@ class PnCloud:
         device = {"order_detail_id": order_id,
                 "device_ids": device_id}
         return self.activate(device)
+
+    def deactivate(self, device):
+        if not self.logged_in:
+            raise Exception("Not logged in")
+
+        result = self._api_post(PNC_ORDER_DEACTIVATION, device)
+        return result
+
+    def deactivate_device_id(self, device_id):
+        if not self.logged_in:
+            print("Not logged in")
+            return False
+
+        det = self.order_details()
+        for details in det:
+            active = [x for x in details['order_activations'] if x['device_id'] == device_id]
+            if active:
+                break
+            print("Continuing to look")
+
+        if not active:
+            print("Device not active: {0}".format(device_id))
+            return True
+
+        print("Deactivating device: {0}".format(device_id))
+        order_detail_id = active[0]['order_detail_id']
+        device = {"order_detail_id": order_detail_id,
+                "device_id": device_id}
+        return self.deactivate(device)
 
     def onie_download(self, installer, installer_vers):
         if not self.logged_in:
@@ -789,6 +819,25 @@ def activate(deviceid, devicetype):
         flash("Failed to activate host")
 
     return redirect(url_for('show_entries', _anchor='dhcp'))
+
+@application.route('/deactivate/<deviceid>', methods=['GET'])
+def deactivate(deviceid):
+    result = False
+    try:
+        pnc = PnCloud.get()
+        pnc.login()
+        result = pnc.deactivate_device_id(deviceid)
+    except Exception as e:
+        print("Failed to deactivate host: {0}: {1}".format(deviceid, e))
+        flash("Failed to deactivate host")
+        return redirect(url_for('show_entries', _anchor='pnc'))
+
+    if result:
+        flash("Deactivated host")
+    else:
+        flash("Failed to Deactivate host")
+
+    return redirect(url_for('show_entries', _anchor='pnc'))
 
 @application.route('/remove/<int:entry_id>', methods=['GET'])
 def remove_entry(entry_id):
