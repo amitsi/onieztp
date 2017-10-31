@@ -1304,6 +1304,10 @@ def all_logs():
                 if not skip_re.search(line):
                     log.append(line)
 
+        status = service_status((LOGCATUI_PROC,))
+        if not status or status[0]['status'] != 'RUNNING':
+            log.append("=== Log Display Paused ===")
+
     return render_template('all_logs.html', log="".join(log))
 
 @application.route('/techsupport', methods=['GET'])
