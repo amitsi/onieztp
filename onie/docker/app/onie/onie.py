@@ -538,6 +538,7 @@ def show_entries():
     products = []
     activation_keys = {}
     activations_by_device_id = {}
+    activation_key_download_times = {}
     if server.server_ip:
         http_base = "http://{0}:{1}".format(server.server_ip.ip, server.server_port)
     else:
@@ -556,8 +557,10 @@ def show_entries():
         for dtype in ACTIVATION_KEY_FILES:
             if os.path.isfile(ACTIVATION_KEY_FILES[dtype]):
                 activation_keys[dtype] = re.sub(r'^.*/images/', '/images/', ACTIVATION_KEY_FILES[dtype])
+                activation_key_download_times[dtype] = datetime.datetime.fromtimestamp(os.path.getmtime(ACTIVATION_KEY_FILES[dtype]))
             else:
                 activation_keys[dtype] = None
+                activation_key_download_times[dtype] = None
 
         for det in pnc.order_details():
             for a in det['order_activations']:
@@ -593,7 +596,7 @@ def show_entries():
             activations_by_device_id=activations_by_device_id, onie_installers=onie_installers,
             uploaded=uploaded, current=current, services=services, http_base=http_base,
             dhcp_leases=dhcp_leases, tshark_status=tshark_status, logcat_status=logcat_status,
-            nvos_running=nvos_running)
+            nvos_running=nvos_running, activation_key_download_times=activation_key_download_times)
 
 def get_default_interface():
     with open('/proc/net/route') as f:
@@ -1424,8 +1427,11 @@ def _nvos_status(all=False, force=False, debug=False):
         if os.path.isfile(NVOS_STATUS_CACHE):
             os.remove(NVOS_STATUS_CACHE)
     else:
-        with open(NVOS_STATUS_CACHE, 'w') as f:
-            f.write(json.dumps(cstatus))
+        try:
+            with open(NVOS_STATUS_CACHE, 'w') as f:
+                f.write(json.dumps(cstatus))
+        except:
+            print("Error writing nvOS status cache")
 
     return cstatus
 

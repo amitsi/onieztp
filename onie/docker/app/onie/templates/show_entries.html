@@ -138,11 +138,11 @@ window.onload = function(e) {
     <table class="thinborder">
         <tr><th>Name</th><th>Version</th><th>Status</th><th>Default</th></tr>
     {% for product in products %}
-    <tr><td>{{ product.name }}</td><td>{{ product.version }}</td><td>{% if product.__downloaded %}<a href="{{ http_base }}/images/{{ product.sw_pid }}">available</a>{% else %}<a href="{{ url_for('download_onie', installer=product.sw_pid, version=product.version) }}" class="button-narrow">download from PN Cloud</a>{% endif %}</td><td align="center" valign="center"><input type="radio" name="installer" value="{{ product.sw_pid }}"{% if not product.__downloaded %} disabled{% else %}{% if product.sw_pid == current %} checked{% endif %} onclick="this.form.submit()"{% endif %}></td></tr>
+    <tr><td>{{ product.name }}</td><td>{{ product.version }}</td><td>{% if product.__downloaded %}<a href="{{ http_base }}/images/{{ product.sw_pid }}">Available</a>{% else %}<a href="{{ url_for('download_onie', installer=product.sw_pid, version=product.version) }}" class="button-narrow">Download from PN Cloud</a>{% endif %}</td><td align="center" valign="center"><input type="radio" name="installer" value="{{ product.sw_pid }}"{% if not product.__downloaded %} disabled{% else %}{% if product.sw_pid == current %} checked{% endif %} onclick="this.form.submit()"{% endif %}></td></tr>
     {% endfor %}
 
     {% for ins in uploaded %}
-    <tr><td>{{ ins.name }}</td><td>{{ ins.version }}</td><td><a href="{{ http_base }}/images/{{ ins.installer }}">uploaded, available</a></td><td align="center" valign="center"><input type="radio" name="installer" value="{{ ins.installer }}"{% if ins.installer == current %} checked{% endif %} onclick="this.form.submit()"></td></tr>
+    <tr><td>{{ ins.name }}</td><td>{{ ins.version }}</td><td><a href="{{ http_base }}/images/{{ ins.installer }}">Uploaded, available</a></td><td align="center" valign="center"><input type="radio" name="installer" value="{{ ins.installer }}"{% if ins.installer == current %} checked{% endif %} onclick="this.form.submit()"></td></tr>
     {% endfor %}
     </table>
     </form>
@@ -162,9 +162,9 @@ window.onload = function(e) {
     <h3>Activation Keys</h3>
     {% if activation_keys %}
     <table class="thinborder">
-        <tr><th>Type</th><td/></tr>
+    <tr><th>Type</th><td/><td/></tr>
     {% for type, activation_key in activation_keys.items() %}
-    <tr><td>{{ type }}</td><td>{% if activation_key %}<a href="{{ http_base }}{{ activation_key }}">available</a>{% else %}<a href="{{ url_for('download_activation_key', dtype=type) }}" class="button-narrow">download from PN Cloud</a>{% endif %}</td></tr>
+    <tr><td>{{ type }}</td><td>{% if activation_key %}<a href="{{ http_base }}{{ activation_key }}">Available</a><br/><small>Downloaded on {{ activation_key_download_times[type].strftime("%b %d %Y, %I:%M%p") }}</small>{% else %}Not available{% endif %}</td><td><a href="{{ url_for('download_activation_key', dtype=type) }}" class="button-narrow">{% if activation_key %}Re-download{% else %}Download{% endif %} from PN Cloud</a></td></tr>
     {% endfor %}
     </table>
     </p><hr/>
